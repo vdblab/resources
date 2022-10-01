@@ -5,7 +5,7 @@ This snakemake workflow is used to create the database/reference/resource infras
 ## Usage
 ```sh
 snakemake --profile /home/watersn/GitHub/vdblab-pipelines/msk-lsf --directory /path/to/new/resources/
-``
+```
 
 
 ## Structure and naming
