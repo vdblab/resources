@@ -9,14 +9,15 @@ tax = Path("taxonomy")
 
 
 
-metaphlan =  multiext("mpa_vJan21_CHOCOPhlAnSGB_202103", ".1.bt2l", ".2.bt2l", ".3.bt2l", ".4.bt2l", ".rev.1.bt2l", ".rev.2.bt2l")
+all_metaphlan =  multiext(str(dbs / "metaphlan" / "202103" / "mpa_vJan21_CHOCOPhlAnSGB_202103"), ".1.bt2l", ".2.bt2l", ".3.bt2l", ".4.bt2l", ".rev.1.bt2l", ".rev.2.bt2l")
+all_metaerg = dbs / "metaerg" / "2022" / "db" / "blast" / "silva_LSURef.fasta"
+
+all_card =    dbs / "CARD" / "v3.4.5/" / "card.json"
+
 
 
 default_container = "docker://ghcr.io/vdblab/utility:0b"
 
-rule all:
-    input:
-        metaphlan,
 
 rule metaphlan:
     """
@@ -29,7 +30,7 @@ rule metaphlan:
     """
     threads: 8
     output:
-        db=multiext(dbs / "metaphlan" / "202103" / "mpa_vJan21_CHOCOPhlAnSGB_202103", ".1.bt2l", ".2.bt2l", ".3.bt2l", ".4.bt2l", ".rev.1.bt2l", ".rev.2.bt2l"),
+        db=all_metaphlan,
     resources:
         mem_mb=32*1024,
         runtime= "6:00",
@@ -69,10 +70,11 @@ rule antismash:
 rule metaerg:
     threads: 2
     output:
-        blast = directory(dbs / "metaerg" / "2022" / "blast"),
-        diamond = directory(dbs / "metaerg" / "2022" / "diamond"),
-        hmm = directory(dbs / "metaerg" / "2022" / "hmm"),
-        sqlite3 = directory(dbs / "metaerg" / "2022" / "sqlite3"),
+        blast = directory(dbs / "metaerg" / "2022" / "db" /  "blast"),
+        blast_silva = dbs / "metaerg" / "2022" / "db" /  "blast" / "silva_LSURef.fasta",
+        diamond = directory(dbs / "metaerg" / "2022" /  "db" /"diamond"),
+        hmm = directory(dbs / "metaerg" / "2022" /  "db" /"hmm"),
+        sqlite3 = directory(dbs / "metaerg" / "2022" /  "db" /"sqlite3"),
     resources:
         mem_mb=2*1024,
         runtime= "6:00",
@@ -84,6 +86,7 @@ rule metaerg:
     wget http://ebg.ucalgary.ca/metaerg/db.tar.gz -P {params.prefix}
     cd {params.prefix}
     tar xzf db.tar.gz
+    rm db.tar.gz
     """
 
 
@@ -168,17 +171,15 @@ rule metaerg:
 rule download_and_format_CARD:
     threads: 2
     output:
-        blast = directory(dbs / "metaerg" / "2022" / "blast"),
-        diamond = directory(dbs / "metaerg" / "2022" / "diamond"),
-        hmm = directory(dbs / "metaerg" / "2022" / "hmm"),
-        sqlite3 = directory(dbs / "metaerg" / "2022" / "sqlite3"),
+        raw = dbs / "CARD" / "v3.4.5/" / "card.json" ,
     resources:
         mem_mb=2*1024,
         runtime= "6:00",
     container:
         "docker://ghcr.io/vdblab/rgi:6.0.0"
     params:
-        prefix=dbs / "CARD" / "v3.2.5"
+        prefix=lambda wildcards, output: os.path.dirname(output.raw),
+        wildcards_db_version="v4.0.0"
     shell: """
     cd {params.prefix}
     echo "Downloading CARD database; this happens the first time RGI is run in a new conda env"
@@ -187,7 +188,8 @@ rule download_and_format_CARD:
     rgi load --card_json ./card.json
     rgi card_annotation -i card.json > card_annotation.log 2>&1
     CARD_VER=$(rgi database --version)
-    rgi load -i card.json --card_annotation card_database_v${CARD_VER}.fasta
+
+    rgi load -i card.json --card_annotation card_database_v${{CARD_VER}}.fasta
     echo "Downloading variants"
     wget -O wildcard_data.tar.bz2 https://card.mcmaster.ca/download/6/prevalence-v4.0.0.tar.bz2 #https://card.mcmaster.ca/latest/variants
     mkdir -p wildcard
@@ -197,38 +199,10 @@ rule download_and_format_CARD:
 
     # these get run on execution currently; not the most efficient but I can't
     # seem to point rgi to an existing DB that isn't in the default search path
+
     #rgi wildcard_annotation -i wildcard --card_json card.json  -v $CARD_VER > wildcard_annotation.log 2>&1
 
-    #rgi load --wildcard_annotation wildcard_database_v${CARD_VER}.fasta \
+    #rgi load --wildcard_annotation wildcard_database_v${{CARD_VER}}.fasta \
         --wildcard_index wildcard/index-for-model-sequences.txt \
-	--card_annotation card_database_v${CARD_VER}.fasta --local
+	--card_annotation card_database_v${{CARD_VER}}.fasta --local
     """
-
-
-
-## Bowtie indexes
-
-```
-mkdir bowtie_indexes && cd
-wget  https://genome-idx.s3.amazonaws.com/bt/chm13.draft_v1.0_plusY.zip
-wget https://genome-idx.s3.amazonaws.com/bt/GRCm39.zip
-unzip chm13.draft_v1.0_plusY.zip
-unzip GRCm39.zip
-
-```
-
-## snap indexes
-```
-
-mkdir snap_indexes
-wget https://s3-us-west-2.amazonaws.com/human-pangenomics/T2T/CHM13/assemblies/analysis_set/chm13v2.0.fa.gz
-wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/635/GCF_000001635.27_GRCm39/GCF_000001635.27_GRCm39_genomic.fna.gz
-gunzip chm13v2.0.fa.gz
-gunzip GCF_000001635.27_GRCm39_genomic.fna.gz
-
-(pull docker://ghcr.io/vdblab/snap-aligner:2.0.1; it saved as /data/brinkvd/.singularity/5b0edf82245696a61e21418a09f2e963.simg)
-bsub -n 16 -R "rusage[mem=4]" -e buildchm13v2.e -o buildchm13v2.o  "module load singularity/3.7.1 && singularity run -B $PWD /data/brinkvd/.singularity/5b0edf82245696a61e21418a09f2e963.simg snap-aligner index chm13v2.0.fa chm13v2.0/ -t16"
-bsub -n 16 -R "rusage[mem=4]" -e buildGRCm39.e -o buildGRCm39.o  "module load singularity/3.7.1 && singularity run -B $PWD  /data/brinkvd/.singularity/5b0edf82245696a61e21418a09f2e963.simg snap-aligner index GCF_000001635.27_GRCm39_genomic.fna GRCm39/ -t16"
-
-
-```

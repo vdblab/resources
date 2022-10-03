@@ -17,9 +17,10 @@ taxonomy/<name>/<version>/
 # or
 dbs/<name>/<version>/
 # or
-references/<organism>/<name>/<version>
+references/<sequence>/<organism>/<version>
 ```
 
 ### taxomony
 ### dbs
 ### references
+References have subdirectories for the actual sequences and the toolspecic indexes

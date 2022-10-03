@@ -5,9 +5,12 @@ import pandas as pd
 
 from pathlib import Path
 
+include: "rules/indexing.smk"
+include: "rules/16S.smk"
+include: "rules/shotgun.smk"
 
-refs = Path("references") / "sequences"
-idxs = Path("references") / "indexes"
+refs = Path("references")
+idxs = Path("indexes")
 dbs = Path("dbs")
 tax = Path("taxonomy")
 
@@ -15,25 +18,36 @@ tax = Path("taxonomy")
 
 MANIFEST = pd.read_csv(os.path.join(workflow.current_basedir, "references.txt"), sep=",").set_index("name", drop=False)
 MANIFEST["base"]  =  MANIFEST.url.apply(lambda x: os.path.basename(x))
-MANIFEST["output"] =  refs / MANIFEST["org"] / MANIFEST["name"] / MANIFEST["base"]
-
-MANIFEST_dict = MANIFEST.to_dict('index')
-print(MANIFEST)
-
-def get_path(wildcards):
-    return
 
 
 
 default_container = "docker://ghcr.io/vdblab/utility:0b"
 
 
-rule all:
-    input:
-        raw = expand(f"{refs}/{{org}}/{{name}}/{{base}}",  zip,
+ref_sequences =  expand(f"{refs}/{{org}}/{{name}}/{{base}}",  zip,
                   org=MANIFEST["org"], name=MANIFEST["name"], base=MANIFEST["base"])
 
-rule getref:
+all_minimap2_indexes =  expand(f"{idxs}/{{org}}/{{name}}/minimap2/{{base}}.mmi",  zip,
+                               org=MANIFEST["org"], name=MANIFEST["name"], base=MANIFEST["base"])
+
+
+all_snap_indexes =  expand(f"{idxs}/{{org}}/{{name}}/snap/{{name}}/Genome",  zip,
+                               org=MANIFEST["org"], name=MANIFEST["name"], base=MANIFEST["base"])
+
+
+
+
+all_input_vars = [x for x in locals() if x.startswith("all_")]
+
+
+
+rule all:
+    input:
+        [eval(x) for x in all_input_vars],
+        ref_sequences,
+        [ v["dest"] for k,v in bowtie_prebuilts.items()],
+
+rule get_refs:
     container: default_container
     output:
         f"{refs}/{{org}}/{{name}}/{{base}}",
@@ -42,47 +56,3 @@ rule getref:
     shell:"""
     wget  {params.url} -O {output}
     """
-
-
-#validate(
-#    MANIFEST, os.path.join(workflow.current_basedir, "../schemas/manifest.schema.yaml")
-#)
-
-
-
-
-
-
-# db16S = multiext(f"{dbs}/ncbi16S/2022/16S_ribosomal_RNA", ".fna", ".ndb", ".nhr", ".nin", ".nnd", ".nni", ".nog", ".nos",  ".nsq",
-#                  ".ntf", ".nto",  "_id_and_taxonomy.txt")
-
-
-# adapters =  refs / "synthetic" / "stephenturner" / "adapters_combined_256_unique.fasta"
-
-# metaphlan =  multiext("mpa_vJan21_CHOCOPhlAnSGB_202103", ".1.bt2l", ".2.bt2l", ".3.bt2l", ".4.bt2l", ".rev.1.bt2l", ".rev.2.bt2l")
-
-
-# default_container = "docker://ghcr.io/vdblab/utility:0b"
-
-# rule all:
-#     input:
-#         db16S,
-#         adapters,
-#         metaphlan,
-
-# module references:
-#     snakefile:
-#         "rules/references.smk"
-
-
-# use rule * from references as references_*
-
-
-# module indexes:
-#     snakefile:
-#         "rules/indexes.smk"
-
-# rule all:
-#     input:
-#         rules.references_all.input,
-# #    default_target: True

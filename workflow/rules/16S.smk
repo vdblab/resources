@@ -8,16 +8,12 @@ dbs = Path("dbs")
 tax = Path("taxonomy")
 
 
-db16S = multiext(f"{dbs}/ncbi16S/2022/16S_ribosomal_RNA", ".fna", ".ndb", ".nhr", ".nin", ".nnd", ".nni", ".nog", ".nos",  ".nsq",
+all_db16S = multiext(f"{dbs}/ncbi16S/2022/16S_ribosomal_RNA", ".fna", ".ndb", ".nhr", ".nin", ".nnd", ".nni", ".nog", ".nos",  ".nsq",
                  ".ntf", ".nto",  "_id_and_taxonomy.txt")
-
 
 
 default_container = "docker://ghcr.io/vdblab/utility:0b"
 
-rule all:
-    input:
-        db16S,
 
 rule install_taxonkit_taxonomy:
     """ I wish this wasn't needed, but taxonkit via singularity doesn't seem
