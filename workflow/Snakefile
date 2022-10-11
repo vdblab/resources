@@ -11,6 +11,7 @@ idxs = Path("indexes")
 dbs = Path("dbs")
 tax = Path("taxonomy")
 
+configfile: os.path.join(workflow.basedir, "runconfig.yaml")
 
 if config["debug"] == 1:
     MANIFEST = pd.read_csv(os.path.join(workflow.current_basedir, "test_downloads.txt"), sep=",").set_index("name", drop=False)

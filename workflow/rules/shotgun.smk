@@ -9,7 +9,7 @@ tax = Path("taxonomy")
 
 
 
-all_metaphlan =  multiext(str(dbs / "metaphlan" / "202103" / "mpa_vJan21_CHOCOPhlAnSGB_202103"), ".1.bt2l", ".2.bt2l", ".3.bt2l", ".4.bt2l", ".rev.1.bt2l", ".rev.2.bt2l")
+all_metaphlan =  multiext(str(dbs / "metaphlan" / "mpa_vJan21_CHOCOPhlAnSGB_202103" / "mpa_vJan21_CHOCOPhlAnSGB_202103"), ".1.bt2l", ".2.bt2l", ".3.bt2l", ".4.bt2l", ".rev.1.bt2l", ".rev.2.bt2l")
 all_metaerg = dbs / "metaerg" / "2022" / "db" / "blast" / "silva_LSURef.fasta"
 
 all_card =    dbs / "CARD" / "v3.4.5/" / "card.json"
@@ -28,15 +28,18 @@ rule metaphlan4:
 
     """
     output:
-        outdir = directory(dbs / "metaphlan_chocophlan" / "mpa_vJan21_CHOCOPhlAnSGB_202103"  ),
-        fasta = dbs / "metaphlan_chocophlan" / "mpa_vJan21_CHOCOPhlAnSGB_202103" / "mpa_v30_CHOCOPhlAn_201901.fna.bz2",
+      #  outdir = directory(dbs / "metaphlan_chocophlan" / "mpa_vJan21_CHOCOPhlAnSGB_202103"  ),
+        all_metaphlan,
+        #fasta = dbs / "metaphlan_chocophlan" / "mpa_vJan21_CHOCOPhlAnSGB_202103" / "mpa_v30_CHOCOPhlAn_201901.fna.bz2",
     threads: 32
     resources:
         mem_mb=32*1024,
         runtime="6:00",
+    params:
+        dbdir = dbs / "metaphlan_chocophlan" / "mpa_vJan21_CHOCOPhlAnSGB_202103",
     shell:"""
-    mkdir -p {output[0]}
-    cd {output[0]}
+    #mkdir -p {params.dbdir}
+    cd {params.dbdir}
     wget  --continue --read-timeout=.1  http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/mpa_vJan21_CHOCOPhlAnSGB_202103.tar
     metaphlan --install --index mpa_vJan21_CHOCOPhlAnSGB_202103 --bowtie2db $PWD"
     rm mpa_vJan21_CHOCOPhlAnSGB_202103.tar
