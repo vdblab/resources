@@ -36,14 +36,9 @@ rule get_prebuild_bowties:
     params:
         url=expand("{url}", url = [v["url"] for k, v in bowtie_prebuilts.items()]),
     shell:"""
-
     cd {output.ref}
     wget {params.url}
     unzip $(basename {params.url}
-
-#    wget  https://genome-idx.s3.amazonaws.com/bt/chm13.draft_v1.0_plusY.zip
-#    wget https://genome-idx.s3.amazonaws.com/bt/GRCm39.zip
-#    unzip GRCm39.zip
     """
 
 

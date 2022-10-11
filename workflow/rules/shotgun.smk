@@ -19,29 +19,29 @@ all_card =    dbs / "CARD" / "v3.4.5/" / "card.json"
 default_container = "docker://ghcr.io/vdblab/utility:0b"
 
 
-rule metaphlan:
+rule metaphlan4:
     """
     This downloads the chocophlan db.  Their install code downloads very slowly
     and often fails so we get it with wget then rerun the install command to
-    continue the rest of the program
-    cd /data/brinkvd/resources/biobakery_workflows_dbs/metaphlanV4/ &&
-    metaphlan --install --bowtie2db /data/brinkvd/resources/biobakery_workflows_dbs/metaphlanV4/
+    metaphlan --install does more than just downloading the db, it also reformats fasta files, extracts files, runs bowtie to index, and more
+    https://github.com/biobakery/MetaPhlAn/blob/3e818b755d2f084d4df31004e83c7cdd5c97a093/metaphlan/__init__.py#L87
 
     """
-    threads: 8
     output:
-        db=all_metaphlan,
+        outdir = directory(dbs / "metaphlan_chocophlan" / "mpa_vJan21_CHOCOPhlAnSGB_202103"  ),
+        fasta = dbs / "metaphlan_chocophlan" / "mpa_vJan21_CHOCOPhlAnSGB_202103" / "mpa_v30_CHOCOPhlAn_201901.fna.bz2",
+    threads: 32
     resources:
         mem_mb=32*1024,
-        runtime= "6:00",
-    params:
-        prefix=dbs / "metaphlan" / "202103"
-    shell: """
-    cd {params.prefix}
-    # you can get this path by running metaphlan --install and watching the logs.
-    wget -c  --read-timeout=5 http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/mpa_vJan21_CHOCOPhlAnSGB_202103.tar
+        runtime="6:00",
+    shell:"""
+    mkdir -p {output[0]}
+    cd {output[0]}
+    wget  --continue --read-timeout=.1  http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/mpa_vJan21_CHOCOPhlAnSGB_202103.tar
     metaphlan --install --index mpa_vJan21_CHOCOPhlAnSGB_202103 --bowtie2db $PWD"
+    rm mpa_vJan21_CHOCOPhlAnSGB_202103.tar
     """
+
 
 
 rule antismash:
@@ -90,6 +90,34 @@ rule metaerg:
     """
 
 
+rule prepare_humann_db:
+    """
+    THe server hosting these files is, again, rather unreliable and slow.
+    We use wget instead of their humann_database --download tool which just downloads and extracts the gzipped tars
+    See: https://github.com/biobakery/humann/blob/b1b674c122b5a538200bc3ba6a8efdade15ff496/humann/utilities.py#L510
+
+    """
+    input:
+        #expand(f"{dbs}/{{name}}/{{version}}/{{base}}", zip, name=DB_MANIFEST["name"], version=DB_MANIFEST["version"], base=DB_MANIFEST["base"])
+        f"{dbs}/{{name}}/{{version}}/{{base}}"
+    params:
+        basename=lambda wildcards, input: os.path.basename(input[0]),
+        dirname=lambda wildcards, input: os.path.dirname(input[0]),
+    output:
+        f"{dbs}/{{name}}/{{version}}/{{base}}.db_ready",
+    resources:
+        mem_mb=2*1024,
+        runtime= "6:00",
+    container: default_container
+    shell:"""
+    tar xzf {input[0]} --directory {params.dirname}
+    echo "{wildcards.name} db version {wildcards.version} prepared on $(date) by $(whoami)" > {output[0]}
+    rm {input[0]}
+    """
+
+
+
+
 
 # ### Metaphlan
 
@@ -120,15 +148,7 @@ rule metaerg:
 # #### Version 4
 # ### Humann
 # # This is uneeded (see https://forum.biobakery.org/t/announcing-metaphlan-3-1-and-humann-3-1/3881)
-# #singularity run --bind /data/brinkvd/ /data/brinkvd/.singularity/d11b613c13947f4c48596feeca9d18cc.simg humann_databases --download uniref uniref90_diamond /data/brinkvd/resources/biobakery_workflows_dbs/v31/uniref90_diamond/
-
-# # this stalls becuase the biobakery servers are super unreliable
-# # singularity run --bind /data/brinkvd/ /data/brinkvd/.singularity/d11b613c13947f4c48596feeca9d18cc.simg humann_databases --download chocophlan full /data/brinkvd/resources/biobakery_workflows_dbs/v31/choco/
-# # have to use wget instead
-# wget -c --read-timeout=.1 http://huttenhower.sph.harvard.edu/humann_data/chocophlan/full_chocophlan.v201901_v31.tar.gz -P /data/brinkvd/resources/biobakery_workflows_dbs/v31/choco/
-
-# cd /data/brinkvd/resources/biobakery_workflows_dbs/v31/choco/ && tar xzf full_chocophlan.v201901_v31.tar.gz && cd ../ && mv choco choco_v201901_v31
-
+# #
 
 # ### Human
 

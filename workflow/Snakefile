@@ -5,9 +5,6 @@ import pandas as pd
 
 from pathlib import Path
 
-include: "rules/indexing.smk"
-include: "rules/16S.smk"
-include: "rules/shotgun.smk"
 
 refs = Path("references")
 idxs = Path("indexes")
@@ -15,24 +12,46 @@ dbs = Path("dbs")
 tax = Path("taxonomy")
 
 
+if config["debug"] == 1:
+    MANIFEST = pd.read_csv(os.path.join(workflow.current_basedir, "test_downloads.txt"), sep=",").set_index("name", drop=False)
+else:
+    MANIFEST = pd.read_csv(os.path.join(workflow.current_basedir, "downloads.txt"), sep=",").set_index("name", drop=False)
 
-MANIFEST = pd.read_csv(os.path.join(workflow.current_basedir, "references.txt"), sep=",").set_index("name", drop=False)
+
 MANIFEST["base"]  =  MANIFEST.url.apply(lambda x: os.path.basename(x))
+
+print(MANIFEST)
+REF_MANIFEST  =  MANIFEST[MANIFEST.kind == "reference"]
+DB_MANIFEST  =  MANIFEST[MANIFEST.kind == "db"]
+
+
+
+
+include: "rules/indexing.smk"
+include: "rules/16S.smk"
+include: "rules/shotgun.smk"
+
+
+# DB_MANIFEST = pd.read_csv(os.path.join(workflow.current_basedir, "humann_dbs.txt"), sep=",").set_index("name", drop=False)
+# DB_MANIFEST["base"]  =  MANIFEST.url.apply(lambda x: os.path.basename(x))
 
 
 
 default_container = "docker://ghcr.io/vdblab/utility:0b"
 
 
-ref_sequences =  expand(f"{refs}/{{org}}/{{name}}/{{base}}",  zip,
-                  org=MANIFEST["org"], name=MANIFEST["name"], base=MANIFEST["base"])
+ref_sequences =  expand(f"{refs}/{{org}}/{{name}}/{{version}}/{{base}}",  zip,
+                        org=REF_MANIFEST["org"], name=REF_MANIFEST["name"], base=REF_MANIFEST["base"], version=REF_MANIFEST["version"])
 
-all_minimap2_indexes =  expand(f"{idxs}/{{org}}/{{name}}/minimap2/{{base}}.mmi",  zip,
-                               org=MANIFEST["org"], name=MANIFEST["name"], base=MANIFEST["base"])
+all_minimap2_indexes =  expand(f"{idxs}/{{org}}/{{name}}/{{version}}/minimap2/{{base}}.mmi",  zip,
+                               org=REF_MANIFEST["org"], name=REF_MANIFEST["name"], base=REF_MANIFEST["base"],
+                               version=REF_MANIFEST["version"])
 
 
-all_snap_indexes =  expand(f"{idxs}/{{org}}/{{name}}/snap/{{name}}/Genome",  zip,
-                               org=MANIFEST["org"], name=MANIFEST["name"], base=MANIFEST["base"])
+all_snap_indexes =  expand(f"{idxs}/{{org}}/{{name}}/{{version}}/snap/{{name}}/Genome",  zip,
+                               org=REF_MANIFEST["org"], name=REF_MANIFEST["name"], base=REF_MANIFEST["base"],
+                           version=REF_MANIFEST["version"]
+                           )
 
 
 
@@ -50,9 +69,28 @@ rule all:
 rule get_refs:
     container: default_container
     output:
-        f"{refs}/{{org}}/{{name}}/{{base}}",
+        f"{refs}/{{org}}/{{name}}/{{version}}/{{base}}",
     params:
-        url=lambda wildcards: MANIFEST.loc[wildcards.name, "url"]
+        url=lambda wildcards: REF_MANIFEST.loc[wildcards.name, "url"]
     shell:"""
-    wget  {params.url} -O {output}
+    wget --continue --read-timeout=.1 {params.url} -O {output}
+    """
+
+rule get_dbs:
+    container: default_container
+    output:
+        f"{dbs}/{{name}}/{{version}}/{{base}}.tar.gz",
+    params:
+        url=lambda wildcards: DB_MANIFEST.loc[wildcards.name, "url"]
+    shell:"""
+    wget --continue --read-timeout=.1 {params.url} -O {output}
+    # only the metaphlan DB has a md5sum :(
+    # wget {params.url}.md5 -O {output}.md5
+    # if md5sum -c {params.url}.md5
+    # then
+    #     echo "Download Success"
+    # else
+    #     echo "MD5 sum does not match; exiting"
+    #     exit 1
+    # fi
     """

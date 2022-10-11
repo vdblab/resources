@@ -1,0 +1,4 @@
+kind,name,version,org,url
+reference,stephenturner-adapters,93b5f91,synthetic,https://raw.githubusercontent.com/stephenturner/adapters/93b5f910de15b8a72051377654fc8e89f4b4fd88/adapters_combined_256_unique.fasta
+db,DEMOuniref90_diamond,v201901b,-,http://huttenhower.sph.harvard.edu/humann_data/uniprot/uniref_annotated/uniref90_DEMO_diamond_v201901b.tar.gz
+db,DEMOchocophlan,v296_201901b,-,http://huttenhower.sph.harvard.edu/humann_data/chocophlan/DEMO_chocophlan.v296_201901b.tar.gz

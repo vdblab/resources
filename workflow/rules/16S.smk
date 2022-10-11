@@ -9,7 +9,7 @@ tax = Path("taxonomy")
 
 
 all_db16S = multiext(f"{dbs}/ncbi16S/2022/16S_ribosomal_RNA", ".fna", ".ndb", ".nhr", ".nin", ".nnd", ".nni", ".nog", ".nos",  ".nsq",
-                 ".ntf", ".nto",  "_id_and_taxonomy.txt")
+                     ".ntf", ".nto",  "_id_and_taxonomy.txt")
 
 
 default_container = "docker://ghcr.io/vdblab/utility:0b"
