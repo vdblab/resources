@@ -21,11 +21,12 @@ else:
 
 MANIFEST["base"]  =  MANIFEST.url.apply(lambda x: os.path.basename(x))
 
-print(MANIFEST)
 REF_MANIFEST  =  MANIFEST[MANIFEST.kind == "reference"]
 DB_MANIFEST  =  MANIFEST[MANIFEST.kind == "db"]
 
 
+onstart:
+    print(MANIFEST)
 
 
 include: "rules/indexing.smk"

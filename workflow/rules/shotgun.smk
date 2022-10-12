@@ -36,12 +36,12 @@ rule metaphlan4:
         mem_mb=32*1024,
         runtime="6:00",
     params:
-        dbdir = dbs / "metaphlan_chocophlan" / "mpa_vJan21_CHOCOPhlAnSGB_202103",
+        dbdir = os.path.dirname(all_metaphlan[0]),#lambda wildcards, output: os.path.dirname(oup
+    container: "docker://ghcr.io/vdblab/biobakery-profiler:20221001",
     shell:"""
-    #mkdir -p {params.dbdir}
     cd {params.dbdir}
-    wget  --continue --read-timeout=.1  http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/mpa_vJan21_CHOCOPhlAnSGB_202103.tar
-    metaphlan --install --index mpa_vJan21_CHOCOPhlAnSGB_202103 --bowtie2db $PWD"
+    wget  --continue --read-timeout=1  http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/mpa_vJan21_CHOCOPhlAnSGB_202103.tar
+    metaphlan --install --index mpa_vJan21_CHOCOPhlAnSGB_202103 --bowtie2db $PWD
     rm mpa_vJan21_CHOCOPhlAnSGB_202103.tar
     """
 
@@ -70,8 +70,26 @@ rule antismash:
     download-antismash-databases --database-dir {params.prefix}
     """
 
-rule metaerg:
+rule metaerg_download:
     threads: 2
+    output:
+        dbs / "metaerg" / "2022" / "db.tar.gz"
+    resources:
+        mem_mb=2*1024,
+        runtime= "6:00",
+    container: default_container
+    params:
+        prefix=dbs / "metaerg" / "2022"
+    shell: """
+    wget http://ebg.ucalgary.ca/metaerg/db.tar.gz -P {params.prefix}
+    """
+
+rule metaerg_unpack:
+    """why a whole separate rule? The download is ~23 gb, and unpacking takes ages
+    """
+    threads: 2
+    input:
+        dbs / "metaerg" / "2022" / "db.tar.gz"
     output:
         blast = directory(dbs / "metaerg" / "2022" / "db" /  "blast"),
         blast_silva = dbs / "metaerg" / "2022" / "db" /  "blast" / "silva_LSURef.fasta",
@@ -81,17 +99,14 @@ rule metaerg:
     resources:
         mem_mb=2*1024,
         runtime= "6:00",
-    container:
-        "docker://antismash/standalone:6.0.0"
     params:
         prefix=dbs / "metaerg" / "2022"
+    container: default_container
     shell: """
-    wget http://ebg.ucalgary.ca/metaerg/db.tar.gz -P {params.prefix}
     cd {params.prefix}
     tar xzf db.tar.gz
     rm db.tar.gz
     """
-
 
 rule prepare_humann_db:
     """
@@ -201,31 +216,25 @@ rule download_and_format_CARD:
     container:
         "docker://ghcr.io/vdblab/rgi:6.0.0"
     params:
-        prefix=lambda wildcards, output: os.path.dirname(output.raw),
-        wildcards_db_version="v4.0.0"
+        dbdir=lambda wildcards, output: os.path.dirname(output.raw),
+        wildcards_db_version="v4.0.0",
+        CARD_version = "v3.2.5",
     shell: """
-    cd {params.prefix}
+    set -eux
+    cd {params.dbdir}
     echo "Downloading CARD database; this happens the first time RGI is run in a new conda env"
-    wget https://card.mcmaster.ca/download/0/broadstreet-v3.2.5.tar.bz2 -O data #https://card.mcmaster.ca/latest/data
+    wget https://card.mcmaster.ca/download/0/broadstreet-{params.CARD_version}.tar.bz2 -O data #https://card.mcmaster.ca/latest/data
+    echo "uncompressing data"
     tar -xvf data ./card.json
-    rgi load --card_json ./card.json
-    rgi card_annotation -i card.json > card_annotation.log 2>&1
-    CARD_VER=$(rgi database --version)
+    rgi card_annotation -i card.json
 
-    rgi load -i card.json --card_annotation card_database_v${{CARD_VER}}.fasta
     echo "Downloading variants"
-    wget -O wildcard_data.tar.bz2 https://card.mcmaster.ca/download/6/prevalence-v4.0.0.tar.bz2 #https://card.mcmaster.ca/latest/variants
+    wget -O wildcard_data.tar.bz2 https://card.mcmaster.ca/download/6/prevalence-{params.wildcards_db_version}.tar.bz2 #https://card.mcmaster.ca/latest/variants
     mkdir -p wildcard
     tar -xjf wildcard_data.tar.bz2 -C wildcard
     echo "unpacking variants"
     gunzip wildcard/*.gz
 
-    # these get run on execution currently; not the most efficient but I can't
-    # seem to point rgi to an existing DB that isn't in the default search path
+    rgi wildcard_annotation -i wildcard --card_json card.json -v {params.wildcards_db_version}
 
-    #rgi wildcard_annotation -i wildcard --card_json card.json  -v $CARD_VER > wildcard_annotation.log 2>&1
-
-    #rgi load --wildcard_annotation wildcard_database_v${{CARD_VER}}.fasta \
-        --wildcard_index wildcard/index-for-model-sequences.txt \
-	--card_annotation card_database_v${{CARD_VER}}.fasta --local
     """

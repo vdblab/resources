@@ -36,14 +36,15 @@ rule get_prebuild_bowties:
     params:
         url=expand("{url}", url = [v["url"] for k, v in bowtie_prebuilts.items()]),
     shell:"""
+    mkdir -p {output.ref}
     cd {output.ref}
     wget {params.url}
-    unzip $(basename {params.url}
+    unzip $(basename {params.url})
     """
 
 
 rule snap:
-    container:""
+    container: "docker://ghcr.io/vdblab/snap-aligner:2.0.1"
     input:
         ref=f"{refs}/{{org}}/{{name}}/{{thisref}}",
     output:
@@ -51,8 +52,8 @@ rule snap:
     threads: 16
     resources:
         mem_mb=64 * 1024
-    script:"""
-    zcat {input.ref}  > tmp.fa
-    snap-aligner index tmp.fa chm13v2.0/ -t{threads}
-    rm tmp.fa
+    params:
+        dbdir=lambda wildcards, output: os.path.dirname(output.ref),
+    shell:"""
+    snap-aligner index {input.ref} {params.dbdir}/ -t{threads}
     """
