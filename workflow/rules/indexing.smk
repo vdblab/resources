@@ -46,9 +46,9 @@ rule get_prebuild_bowties:
 rule snap:
     container: "docker://ghcr.io/vdblab/snap-aligner:2.0.1"
     input:
-        ref=f"{refs}/{{org}}/{{name}}/{{thisref}}",
+        ref=f"{refs}/{{org}}/{{name}}/{{version}}/{{thisref}}",
     output:
-        ref=f"{idxs}/{{org}}/{{name}}/snap/{{thisref}}/Genome",
+        ref=f"{idxs}/{{org}}/{{name}}/{{version}}/snap/{{thisref}}/Genome",
     threads: 16
     resources:
         mem_mb=64 * 1024

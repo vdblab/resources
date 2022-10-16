@@ -49,13 +49,13 @@ all_minimap2_indexes =  expand(f"{idxs}/{{org}}/{{name}}/{{version}}/minimap2/{{
                                org=REF_MANIFEST["org"], name=REF_MANIFEST["name"], base=REF_MANIFEST["base"],
                                version=REF_MANIFEST["version"])
 
-
-all_snap_indexes =  expand(f"{idxs}/{{org}}/{{name}}/{{version}}/snap/{{name}}/Genome",  zip,
-                               org=REF_MANIFEST["org"], name=REF_MANIFEST["name"], base=REF_MANIFEST["base"],
+# having the basename in the path is ugly but it makes snakemake happy to have
+# the same inputs and output  wildcards.
+# So its a tradeoff of cleaner code vs uglier paths
+all_snap_indexes =  expand(f"{idxs}/{{org}}/{{name}}/{{version}}/snap/{{base}}/Genome",  zip,
+                           org=REF_MANIFEST["org"], name=REF_MANIFEST["name"], base=REF_MANIFEST["base"],
                            version=REF_MANIFEST["version"]
                            )
-
-
 
 
 all_input_vars = [x for x in locals() if x.startswith("all_")]
@@ -68,6 +68,7 @@ rule all:
         ref_sequences,
         [ v["dest"] for k,v in bowtie_prebuilts.items()],
 
+
 rule get_refs:
     container: default_container
     output:
@@ -75,7 +76,7 @@ rule get_refs:
     params:
         url=lambda wildcards: REF_MANIFEST.loc[wildcards.name, "url"]
     shell:"""
-    wget --continue --read-timeout=.1 {params.url} -O {output}
+    wget --continue --read-timeout=1 {params.url} -O {output}
     """
 
 rule get_dbs:
@@ -85,7 +86,7 @@ rule get_dbs:
     params:
         url=lambda wildcards: DB_MANIFEST.loc[wildcards.name, "url"]
     shell:"""
-    wget --continue --read-timeout=.1 {params.url} -O {output}
+    wget --continue --read-timeout=1 {params.url} -O {output}
     # only the metaphlan DB has a md5sum :(
     # wget {params.url}.md5 -O {output}.md5
     # if md5sum -c {params.url}.md5

@@ -14,7 +14,10 @@ all_metaerg = dbs / "metaerg" / "2022" / "db" / "blast" / "silva_LSURef.fasta"
 
 all_card =    dbs / "CARD" / "v3.4.5/" / "card.json"
 
-
+all_humann_dbs =  expand(f"{dbs}/{{name}}/{{version}}/{{base}}.db_ready", zip,
+                         org=DB_MANIFEST["org"], name=DB_MANIFEST["name"], base=DB_MANIFEST["base"],
+                         version=DB_MANIFEST["version"]
+                         )
 
 default_container = "docker://ghcr.io/vdblab/utility:0b"
 
