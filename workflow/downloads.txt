@@ -6,3 +6,4 @@ reference,CHM13,v2.0,human,https://s3-us-west-2.amazonaws.com/human-pangenomics/
 db,uniref90_diamond,v201901b,-,http://huttenhower.sph.harvard.edu/humann_data/uniprot/uniref_annotated/uniref90_annotated_v201901b_full.tar.gz
 db,utility_mapping,utility_mapping,-,http://huttenhower.sph.harvard.edu/humann_data/full_mapping_v201901b.tar.gz
 db,chocophlan,v296_201901b,-,http://huttenhower.sph.harvard.edu/humann_data/chocophlan/full_chocophlan.v296_201901b.tar.gz
+db,kraken,k2_pluspf_20220908,-,https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_20220908.tar.gz

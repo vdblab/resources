@@ -32,7 +32,7 @@ onstart:
 include: "rules/indexing.smk"
 include: "rules/16S.smk"
 include: "rules/shotgun.smk"
-
+include: "rules/krakenbracken.smk"
 
 # DB_MANIFEST = pd.read_csv(os.path.join(workflow.current_basedir, "humann_dbs.txt"), sep=",").set_index("name", drop=False)
 # DB_MANIFEST["base"]  =  MANIFEST.url.apply(lambda x: os.path.basename(x))
