@@ -85,6 +85,8 @@ rule get_dbs:
         f"{dbs}/{{name}}/{{version}}/{{base}}.tar.gz",
     params:
         url=lambda wildcards: DB_MANIFEST.loc[wildcards.name, "url"]
+    resources:
+        runtime="12:00",
     shell:"""
     wget --continue --read-timeout=1 {params.url} -O {output}
     # only the metaphlan DB has a md5sum :(

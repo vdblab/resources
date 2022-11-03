@@ -1,5 +1,6 @@
 import os
 import sys
+from datetime import date
 from pathlib import Path
 
 
@@ -8,6 +9,8 @@ dbs = Path("dbs")
 tax = Path("taxonomy")
 
 
+today = date.today()
+all_refseq = f"{refs}/refseq/refseq/refseq/{today}-refseq.done"
 
 all_metaphlan =  multiext(str(dbs / "metaphlan" / "mpa_vJan21_CHOCOPhlAnSGB_202103" / "mpa_vJan21_CHOCOPhlAnSGB_202103"), ".1.bt2l", ".2.bt2l", ".3.bt2l", ".4.bt2l", ".rev.1.bt2l", ".rev.2.bt2l")
 all_metaerg = dbs / "metaerg" / "2022" / "db" / "blast" / "silva_LSURef.fasta"
@@ -27,7 +30,7 @@ all_silva_db =  multiext(f"{dbs}/SILVA/138.1_SSURef_NR99/SILVA_138.1_SSURef_NR99
 default_container = "docker://ghcr.io/vdblab/utility:0b"
 
 
-rule metaphlan4:
+rule metaphlan4_download:
     """
     This downloads the chocophlan db.  Their install code downloads very slowly
     and often fails so we get it with wget then rerun the install command to
@@ -36,19 +39,39 @@ rule metaphlan4:
 
     """
     output:
-      #  outdir = directory(dbs / "metaphlan_chocophlan" / "mpa_vJan21_CHOCOPhlAnSGB_202103"  ),
-        all_metaphlan,
-        #fasta = dbs / "metaphlan_chocophlan" / "mpa_vJan21_CHOCOPhlAnSGB_202103" / "mpa_v30_CHOCOPhlAn_201901.fna.bz2",
-    threads: 32
+        fasta = temp(dbs / "metaphlan" / "mpa_vJan21_CHOCOPhlAnSGB_202103" / "mpa_vJan21_CHOCOPhlAnSGB_202103.tar"),
+    threads: 1
     resources:
-        mem_mb=32*1024,
-        runtime="6:00",
+        runtime="12:00",
     params:
         dbdir = os.path.dirname(all_metaphlan[0]),#lambda wildcards, output: os.path.dirname(oup
     container: "docker://ghcr.io/vdblab/biobakery-profiler:20221001",
     shell:"""
     cd {params.dbdir}
     wget  --continue --read-timeout=1  http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/mpa_vJan21_CHOCOPhlAnSGB_202103.tar
+    """
+
+rule metaphlan4_process:
+    """
+    This downloads the chocophlan db.  Their install code downloads very slowly
+    and often fails so we get it with wget then rerun the install command to
+    metaphlan --install does more than just downloading the db, it also reformats fasta files, extracts files, runs bowtie to index, and more
+    https://github.com/biobakery/MetaPhlAn/blob/3e818b755d2f084d4df31004e83c7cdd5c97a093/metaphlan/__init__.py#L87
+
+    """
+    input:
+        fasta = dbs / "metaphlan" / "mpa_vJan21_CHOCOPhlAnSGB_202103" / "mpa_vJan21_CHOCOPhlAnSGB_202103.tar",
+    output:
+        all_metaphlan,
+    threads: 32
+    resources:
+        mem_mb=32*1024,
+        runtime="12:00",
+    params:
+        dbdir = os.path.dirname(all_metaphlan[0]),#lambda wildcards, output: os.path.dirname(oup
+    container: "docker://ghcr.io/vdblab/biobakery-profiler:20221001",
+    shell:"""
+    cd {params.dbdir}
     metaphlan --install --index mpa_vJan21_CHOCOPhlAnSGB_202103 --bowtie2db $PWD
     rm mpa_vJan21_CHOCOPhlAnSGB_202103.tar
     """
@@ -84,7 +107,7 @@ rule metaerg_download:
         dbs / "metaerg" / "2022" / "db.tar.gz"
     resources:
         mem_mb=2*1024,
-        runtime= "6:00",
+        runtime= "12:00",
     container: default_container
     params:
         prefix=dbs / "metaerg" / "2022"
@@ -293,4 +316,26 @@ rule get_checkm:
     cd $(dirname {output})
     tar xzf $(basename {output})
     find .
+    """
+
+rule get_refseq_genomes:
+    # taken directly from https://www.ncbi.nlm.nih.gov/genome/doc/ftpfaq/
+    output:
+        all_refseq
+    params:
+        outdir=os.path.dirname(all_refseq),
+    shell:"""
+    cd {params.outdir}
+    wget https://ftp.ncbi.nlm.nih.gov/genomes/refseq/bacteria/assembly_summary.txt
+    awk -F "\t" '$12=="Complete Genome" $11=="latest"{{print $20}}' assembly_summary.txt > ftpdirpaths
+    awk 'BEGIN{{FS=OFS="/";filesuffix="genomic.fna.gz"}}{{ftpdir=$0;asm=$10;file=asm"_"filesuffix;print ftpdir,file}}' ftpdirpaths > ftpfilepaths
+    # get those not already here. note you will need to force rerunning if needed
+    cat ftpfilepaths | while read f;
+    do
+    echo $f
+    base=$(basename $f)
+    if [ ! -f "$base" ]; then
+    wget $f
+    done
+    ls . > {output}
     """
