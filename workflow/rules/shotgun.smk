@@ -20,6 +20,9 @@ all_humann_dbs =  expand(f"{dbs}/{{name}}/{{version}}/{{base}}.db_ready", zip,
                          version=DB_MANIFEST["version"]
                          )
 
+#multiext(f"{dbs}/SILVA/138.1_SSURef_NR99/SILVA_138.1_SSURef_NR99_tax_silva", ".nsq", ".njs", ".nin", ".nto", ".ndb", ".ntf", ".not", ".nhr")
+all_silva_db =  multiext(f"{dbs}/SILVA/138.1_SSURef_NR99/SILVA_138.1_SSURef_NR99_tax_silva", ".nsq", ".nin",  ".nhr")
+
 
 default_container = "docker://ghcr.io/vdblab/utility:0b"
 
@@ -242,4 +245,52 @@ rule download_and_format_CARD:
 
     rgi wildcard_annotation -i wildcard --card_json card.json -v {params.wildcards_db_version}
 
+    """
+
+
+rule get_quast_silva:
+    output:
+        silva=f"{dbs}/SILVA/138.1_SSURef_NR99/SILVA_138.1_SSURef_NR99_tax_silva.fasta.gz",
+    shell:"""
+    wget https://www.arb-silva.de/fileadmin/silva_databases/release_138.1/Exports/SILVA_138.1_SSURef_NR99_tax_silva.fasta.gz -O {output.silva}
+    wget https://www.arb-silva.de/fileadmin/silva_databases/release_138.1/Exports/SILVA_138.1_SSURef_NR99_tax_silva.fasta.gz.md5  -O {output.silva}.md5
+    cd $(dirname {output.silva})
+    md5sum -c $(basename {output.silva}).md5
+    """
+
+
+rule format_quast_silva_blast_db:
+    """ Quast wants the long-outdated old blast format that results in a nhr, nin, and nsq file
+    """
+    container:
+        "docker://ncbi/blast:2.7.1"
+        #"docker://nickp60/micro16s-blast",
+    input:
+        raw=f"{dbs}/SILVA/138.1_SSURef_NR99/SILVA_138.1_SSURef_NR99_tax_silva.fasta.gz",
+    output:
+        multiext(f"{dbs}/SILVA/138.1_SSURef_NR99/SILVA_138.1_SSURef_NR99_tax_silva", ".nsq", ".nin",  ".nhr")
+    resources:
+        mem_mb=8 * 1024,
+        runtime="4:00",
+    params:
+        taxdir=tax / "NCBI" / "taxonkit",
+        dbpath = lambda wildcards, input: input.raw.replace(".fasta.gz", ""),
+        dbname = lambda wildcards, input: os.path.basename(input.raw.replace(".fasta.gz", "")),
+    shell:"""
+    set -eux
+    gunzip -c {input.raw} | tr -d "_" | \
+    makeblastdb  -in - -dbtype nucl -out {params.dbpath} -title {params.dbname}
+    find dbs
+    """
+
+rule get_checkm:
+    """ Depreciated; moved to a docker container with this built in
+    """
+    output:
+        f"{dbs}/CHECKM/20150116/checkm_data_2015_01_16.tar.gz",
+    shell:"""
+    wget https://data.ace.uq.edu.au/public/CheckM_databases/checkm_data_2015_01_16.tar.gz -O {output}
+    cd $(dirname {output})
+    tar xzf $(basename {output})
+    find .
     """
