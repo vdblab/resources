@@ -324,10 +324,12 @@ rule get_refseq_genomes:
         all_refseq
     params:
         outdir=os.path.dirname(all_refseq),
+    resources:
+        runtime="8:00",
     shell:"""
     cd {params.outdir}
     wget https://ftp.ncbi.nlm.nih.gov/genomes/refseq/bacteria/assembly_summary.txt
-    awk -F "\t" '$12=="Complete Genome" $11=="latest"{{print $20}}' assembly_summary.txt > ftpdirpaths
+    awk -F "\t" '$12=="Complete Genome" &&  $11=="latest"{{print $20}}' assembly_summary.txt > ftpdirpaths
     awk 'BEGIN{{FS=OFS="/";filesuffix="genomic.fna.gz"}}{{ftpdir=$0;asm=$10;file=asm"_"filesuffix;print ftpdir,file}}' ftpdirpaths > ftpfilepaths
     # get those not already here. note you will need to force rerunning if needed
     cat ftpfilepaths | while read f;
@@ -336,6 +338,7 @@ rule get_refseq_genomes:
     base=$(basename $f)
     if [ ! -f "$base" ]; then
     wget $f
+    fi
     done
-    ls . > {output}
+    ls . > $(basename {output})
     """
