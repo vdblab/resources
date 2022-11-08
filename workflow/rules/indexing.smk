@@ -26,34 +26,50 @@ rule minimap:
     """
 
 
-bowtie_prebuilts = {
-    "GRCm39": {"org": "mouse",
-               "url": "https://genome-idx.s3.amazonaws.com/bt/GRCm39.zip",
-               "dest": f"{idxs}/human/GRCm39/bowtie/GRCm39/",
-               "trig": f"{idxs}/human/GRCm39/bowtie/GRCm39/GRCm39.1.bt2"},
-    "CHM13":  {"org": "human",
-               "url": "https://genome-idx.s3.amazonaws.com/bt/chm13.draft_v1.0_plusY.zip",
-               "dest": f"{idxs}/human/CHM13/bowtie/CHM13/",
-               "trig": f"{idxs}/human/GRCm39/bowtie/GRCm39/GRCm39.1.bt2"}
-}
-bowtie_prebuilt_names = list(bowtie_prebuilts.keys())
+# bowtie_prebuilts = {
+#     "GRCm39": {"org": "mouse",
+#                "url": "https://genome-idx.s3.amazonaws.com/bt/GRCm39.zip",
+#                "dest": f"{idxs}/mouse/GRCm39/bowtie/GRCm39/"},
+#     "CHM13":  {"org": "human",
+#                "url": "https://genome-idx.s3.amazonaws.com/bt/chm13.draft_v1.0_plusY.zip",
+#                "dest": f"{idxs}/human/CHM13/bowtie/CHM13/"}
+# }
 
-all_bowtie_prebuit_triggers = [bowtie_prebuilts[k]["trig"] for k in bowtie_prebuilt_names]
+# all_bowtie_prebuit_triggers = [
+#     f"{idxs}/human/CHM13/v1.0/bowtie/chm13.draft_v1.0_plusY.1.bt2",
+#     f"{idxs}/mouse/GRCm39/GCA_000001635.27/bowtie/GRCm39.1.bt2"]
 
-rule get_prebuild_bowties:
-    output:
-        ref=directory(expand("{dest}", dest = [bowtie_prebuilts[k]["dest"] for k in bowtie_prebuilt_names])),
-        index_1bt2 = expand("{dest}{base}.1.bt2", zip,
-                            dest = [bowtie_prebuilts[k]["dest"] for k in bowtie_prebuilt_names],
-                            base = bowtie_prebuilt_names),
-    params:
-        url=expand("{url}", url = [v["url"] for k, v in bowtie_prebuilts.items()]),
-    shell:"""
-    mkdir -p {output.ref}
-    cd {output.ref}
-    wget {params.url}
-    unzip $(basename {params.url})
-    """
+
+# # I was trying to be clever and use wildcards etc but this was easier to hardcode two rules :(
+# rule get_prebuild_bowtie_mouse:
+#     output:
+#         ref=directory(f"{idxs}/mouse/GRCm39/GCA_000001635.27/bowtie/"),
+#         index_1bt2 = f"{idxs}/mouse/GRCm39/GCA_000001635.27/bowtie/GRCm39.1.bt2",
+#     params:
+#         url="https://genome-idx.s3.amazonaws.com/bt/GRCm39.zip"
+#     shell:"""
+#     mkdir -p {output.ref}
+#     cd {output.ref}
+#     wget {params.url}
+#     # the -j junks the paths, so stuff ends up in the current working dir
+#     unzip -j  $(basename {params.url})
+#     find .
+#     """
+
+# rule get_prebuild_bowtie_human:
+#     output:
+#         ref=directory(f"{idxs}/human/CHM13/v1.0/bowtie/"),
+#         index_1bt2 = f"{idxs}/human/CHM13/v1.0/bowtie/chm13.draft_v1.0_plusY.1.bt2",
+#     params:
+#         url="https://genome-idx.s3.amazonaws.com/bt/chm13.draft_v1.0_plusY.zip"
+#     shell:"""
+#     mkdir -p {output.ref}
+#     cd {output.ref}
+#     wget {params.url}
+#     # the -j junks the paths, so stuff ends up in the current working dir
+#     unzip -j  $(basename {params.url})
+#     find .
+#     """
 
 
 rule snap:
@@ -69,4 +85,19 @@ rule snap:
         dbdir=lambda wildcards, output: os.path.dirname(output.ref),
     shell:"""
     snap-aligner index {input.ref} {params.dbdir}/ -t{threads}
+    """
+
+rule bowtie_index:
+    container: "docker://staphb/bowtie2:2.4.4"
+    input:
+        ref=f"{refs}/{{org}}/{{name}}/{{version}}/{{thisref}}",
+    output:
+        ref=f"{idxs}/{{org}}/{{name}}/{{version}}/bowtie2/{{thisref}}.1.bt2",
+    threads: 32
+    resources:
+        mem_mb=64 * 1024
+    params:
+        dbpre=lambda wildcards, output: output.ref.replace(".1.bt2", "")
+    shell:"""
+    bowtie2-build --threads {threads} {input.ref} {params.dbpre}
     """

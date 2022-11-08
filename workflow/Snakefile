@@ -56,6 +56,10 @@ all_snap_indexes =  expand(f"{idxs}/{{org}}/{{name}}/{{version}}/snap/{{base}}/G
                            org=REF_MANIFEST["org"], name=REF_MANIFEST["name"], base=REF_MANIFEST["base"],
                            version=REF_MANIFEST["version"]
                            )
+all_bowtie2_indexes =  expand(f"{idxs}/{{org}}/{{name}}/{{version}}/bowtie2/{{base}}.1.bt2",  zip,
+                           org=REF_MANIFEST["org"], name=REF_MANIFEST["name"], base=REF_MANIFEST["base"],
+                           version=REF_MANIFEST["version"]
+                           )
 
 
 all_input_vars = [x for x in locals() if x.startswith("all_")]
@@ -66,7 +70,7 @@ rule all:
     input:
         [eval(x) for x in all_input_vars],
         ref_sequences,
-        [ v["dest"] for k,v in bowtie_prebuilts.items()],
+#        [ v["dest"] for k,v in bowtie_prebuilts.items()],
 
 
 rule get_refs:

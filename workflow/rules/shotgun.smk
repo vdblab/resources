@@ -156,7 +156,7 @@ rule prepare_humann_db:
         f"{dbs}/{{name}}/{{version}}/{{base}}.db_ready",
     resources:
         mem_mb=2*1024,
-        runtime= "6:00",
+        runtime= "12:00",
     container: default_container
     shell:"""
     tar xzf {input[0]} --directory {params.dirname}
@@ -341,4 +341,29 @@ rule get_refseq_genomes:
     fi
     done
     ls . > $(basename {output})
+    """
+
+all_cazi_outputs =  dbs / "dbCAN2" / "v11/" / "stp.hmm"
+
+rule cazi_db:
+    container: "docker://haidyi/run_dbcan:3.0.1"
+    resources:
+        mem_mb=32*1024,
+        runtime="12:00",
+    output:
+        db = directory(dbs / "dbCAN2" / "v11/"),
+        trig = dbs / "dbCAN2" / "v11/" / "stp.hmm",
+    shell:"""
+    mkdir -p {output.db}
+    cd {output.db}
+    wget http://bcb.unl.edu/dbCAN2/download/Databases/V11/CAZyDB.08062022.fa && diamond makedb --in CAZyDB.08062022.fa -d CAZy
+    wget https://bcb.unl.edu/dbCAN2/download/Databases/V11/dbCAN-HMMdb-V11.txt && mv dbCAN-HMMdb-V11.txt dbCAN.txt && hmmpress dbCAN.txt
+    wget https://bcb.unl.edu/dbCAN2/download/Databases/V11/tcdb.fa && diamond makedb --in tcdb.fa -d tcdb
+    wget http://bcb.unl.edu/dbCAN2/download/Databases/V11/tf-1.hmm && hmmpress tf-1.hmm
+    wget http://bcb.unl.edu/dbCAN2/download/Databases/V11/tf-2.hmm && hmmpress tf-2.hmm
+    wget https://bcb.unl.edu/dbCAN2/download/Databases/V11/stp.hmm && hmmpress stp.hmm
+# \
+#    && cd ../ && wget http://bcb.unl.edu/dbCAN2/download/Samples/EscheriaColiK12MG1655.fna \
+#    && wget http://bcb.unl.edu/dbCAN2/download/Samples/EscheriaColiK12MG1655.faa \
+#    && wget http://bcb.unl.edu/dbCAN2/download/Samples/EscheriaColiK12MG1655.gff
     """
