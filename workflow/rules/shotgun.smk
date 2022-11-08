@@ -23,7 +23,6 @@ all_humann_dbs =  expand(f"{dbs}/{{name}}/{{version}}/{{base}}.db_ready", zip,
                          version=DB_MANIFEST["version"]
                          )
 
-#multiext(f"{dbs}/SILVA/138.1_SSURef_NR99/SILVA_138.1_SSURef_NR99_tax_silva", ".nsq", ".njs", ".nin", ".nto", ".ndb", ".ntf", ".not", ".nhr")
 all_silva_db =  multiext(f"{dbs}/SILVA/138.1_SSURef_NR99/SILVA_138.1_SSURef_NR99_tax_silva", ".nsq", ".nin",  ".nhr")
 
 
@@ -168,45 +167,9 @@ rule prepare_humann_db:
 
 
 
-# ### Metaphlan
-
-# ```
-# mkdir /data/brinkvd/resources/biobakery_workflows_dbs/v31
-# # wget -P /data/brinkvd/resources/biobakery_workflows_dbs/v31 http://cmprod1.cibio.unitn.it/biobakery3/metaphlan_databases/mpa_v31_CHOCOPhlAn_201901_marker_info.txt.bz2
-
-# singularity run --bind /data/brinkvd/ /data/brinkvd/.singularity/d11b613c13947f4c48596feeca9d18cc.simg metaphlan  --install --index mpa_v31_CHOCOPhlAn_201901 --bowtie2db /data/brinkvd/resources/biobakery_workflows_dbs/v31/
-
-# $ tree /data/brinkvd/resources/biobakery_workflows_dbs/v31/
-# /data/brinkvd/resources/biobakery_workflows_dbs/v31/
-# ├── mpa_v31_CHOCOPhlAn_201901.1.bt2
-# ├── mpa_v31_CHOCOPhlAn_201901.2.bt2
-# ├── mpa_v31_CHOCOPhlAn_201901.3.bt2
-# ├── mpa_v31_CHOCOPhlAn_201901.4.bt2
-# ├── mpa_v31_CHOCOPhlAn_201901.fna.bz2
-# ├── mpa_v31_CHOCOPhlAn_201901_marker_info.txt.bz2
-# ├── mpa_v31_CHOCOPhlAn_201901.md5
-# ├── mpa_v31_CHOCOPhlAn_201901.pkl
-# ├── mpa_v31_CHOCOPhlAn_201901.rev.1.bt2
-# ├── mpa_v31_CHOCOPhlAn_201901.rev.2.bt2
-# └── mpa_v31_CHOCOPhlAn_201901.tar
-
-# ```
 
 
-# """
-# #### Version 4
-# ### Humann
-# # This is uneeded (see https://forum.biobakery.org/t/announcing-metaphlan-3-1-and-humann-3-1/3881)
-# #
-
-# ### Human
-
-# """
-
-
-
-
-
+# Keeping the following as a starting point should anyone attempt to make a kaiju db for here
 # ## kaiju
 
 # ```
@@ -351,19 +314,18 @@ rule cazi_db:
         mem_mb=32*1024,
         runtime="12:00",
     output:
-        db = directory(dbs / "dbCAN2" / "v11/"),
         trig = dbs / "dbCAN2" / "v11/" / "stp.hmm",
+    params:
+        db=lambda wildcards, output: os.path.dirname(output.trig)
+    threads: 32
     shell:"""
-    mkdir -p {output.db}
-    cd {output.db}
-    wget http://bcb.unl.edu/dbCAN2/download/Databases/V11/CAZyDB.08062022.fa && diamond makedb --in CAZyDB.08062022.fa -d CAZy
+    mkdir -p {params.db}
+    cd {params.db}
+    # don't ask why some are http and others https; I took this from the docs
+    wget http://bcb.unl.edu/dbCAN2/download/Databases/V11/CAZyDB.08062022.fa && diamond makedb --in CAZyDB.08062022.fa -d CAZy --threads {threads}
     wget https://bcb.unl.edu/dbCAN2/download/Databases/V11/dbCAN-HMMdb-V11.txt && mv dbCAN-HMMdb-V11.txt dbCAN.txt && hmmpress dbCAN.txt
-    wget https://bcb.unl.edu/dbCAN2/download/Databases/V11/tcdb.fa && diamond makedb --in tcdb.fa -d tcdb
+    wget https://bcb.unl.edu/dbCAN2/download/Databases/V11/tcdb.fa && diamond makedb --in tcdb.fa -d tcdb --threads {threads}
     wget http://bcb.unl.edu/dbCAN2/download/Databases/V11/tf-1.hmm && hmmpress tf-1.hmm
     wget http://bcb.unl.edu/dbCAN2/download/Databases/V11/tf-2.hmm && hmmpress tf-2.hmm
     wget https://bcb.unl.edu/dbCAN2/download/Databases/V11/stp.hmm && hmmpress stp.hmm
-# \
-#    && cd ../ && wget http://bcb.unl.edu/dbCAN2/download/Samples/EscheriaColiK12MG1655.fna \
-#    && wget http://bcb.unl.edu/dbCAN2/download/Samples/EscheriaColiK12MG1655.faa \
-#    && wget http://bcb.unl.edu/dbCAN2/download/Samples/EscheriaColiK12MG1655.gff
     """

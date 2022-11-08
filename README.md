@@ -9,7 +9,7 @@ snakemake --profile /home/watersn/GitHub/vdblab-pipelines/msk-lsf --directory /p
 
 
 ## Structure and naming
-The main structure of the resulting folder has 3 subdirectories: **taxonomy**, **dbs**, and **references**.  These represent the *types* of static resources used. The naming of the hierarchy should look like the following:
+The main structure of the resulting folder has 4 subdirectories: **taxonomy**, **dbs**, **references**, and **indexes**. These represent the *types* of static resources used. The naming of the hierarchy should look like the following:
 
 
 ```
@@ -17,10 +17,20 @@ taxonomy/<name>/<version>/
 # or
 dbs/<name>/<version>/
 # or
-references/<sequence>/<organism>/<version>
+references/<organism>/<name>/<version>
+# or
+indexes/<organism>/<name>/<version>/<tool>
 ```
 
-### taxomony
+### Taxomony
+This is for the files that define a taxonomic hierarchy.  Currenly we have the NCBI taxonomy downloaded here, but we could also add GTDB, SILVA, etc.
 ### dbs
+Database archives should be listed in the `workflow/downloads.txt` file to be fetched. For anything more complex than unpacking, a new rule may need be created for that database.
 ### references
-References have subdirectories for the actual sequences and the toolspecic indexes
+Reference sequences are arranged by organism, name, and version. When possible, retain the original file names from NCBI, so we can programatically access sequences and annotations with the same prefix. References should be listed in the `workflow/downloads.txt` file to be fetched, listing the appropriate fields for organism, name, version, and URL.
+### indexes
+The indexes are stored in a similar hierarchy to the reference sequences, with the addition of a tool-specific level.
+
+
+# manual steps
+Phanta must be downloaded/uploaded manually, as Dropbox is not accessible via the cluster.
