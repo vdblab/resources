@@ -15,7 +15,7 @@ all_refseq = f"{refs}/refseq/refseq/refseq/{today}-refseq.done"
 all_metaphlan =  multiext(str(dbs / "metaphlan" / "mpa_vJan21_CHOCOPhlAnSGB_202103" / "mpa_vJan21_CHOCOPhlAnSGB_202103"), ".1.bt2l", ".2.bt2l", ".3.bt2l", ".4.bt2l", ".rev.1.bt2l", ".rev.2.bt2l")
 all_metaerg = dbs / "metaerg" / "2022" / "db" / "blast" / "silva_LSURef.fasta"
 
-all_card =    dbs / "CARD" / "v3.4.5/" / "card.json"
+all_card =    dbs / "CARD" / "v3.2.5/" / "card.json"
 
 # minomer: includes prebuilt kraken :/
 all_humann_dbs =  expand(f"{dbs}/{{name}}/{{version}}/{{base}}.db_ready", zip,
@@ -203,7 +203,7 @@ rule prepare_humann_db:
 rule download_and_format_CARD:
     threads: 2
     output:
-        raw = dbs / "CARD" / "v3.4.5/" / "card.json" ,
+        raw = dbs / "CARD" / "v3.2.5/" / "card.json" ,
     resources:
         mem_mb=2*1024,
         runtime= "6:00",
