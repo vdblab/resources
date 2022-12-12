@@ -314,7 +314,7 @@ rule cazi_db:
         mem_mb=32*1024,
         runtime="12:00",
     output:
-        trig = dbs / "dbCAN2" / "v11/" / "stp.hmm",
+        trig = dbs / "dbCAN2" / "v11/" / "stp.hmm.h3f",
     params:
         db=lambda wildcards, output: os.path.dirname(output.trig)
     threads: 32
