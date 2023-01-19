@@ -306,7 +306,7 @@ rule get_refseq_genomes:
     ls . > $(basename {output})
     """
 
-all_cazi_outputs =  dbs / "dbCAN2" / "v11/" / "stp.hmm"
+all_cazi_outputs =  dbs / "dbCAN2" / "v11/" / "stp.hmm.h3f"
 
 rule cazi_db:
     container: "docker://haidyi/run_dbcan:3.0.1"
