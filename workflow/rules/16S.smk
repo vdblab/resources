@@ -22,7 +22,7 @@ rule install_taxonkit_taxonomy:
      use the unpacked taxdump.  Other tools might use the taxdump (eg kraken)
     so we leave it here
     """
-    container: default_container
+#    container: default_container
     output:
         dir= directory(tax / "NCBI"),
         tkdir= directory(tax / "NCBI" / "taxonkit" ),
@@ -100,10 +100,10 @@ rule ncbi_16S_format:
     # create a nice fasta from the database's sequences
     blastdbcmd -entry all -db {params.dbname} -out {output[0]}
     # extract an accession/taxid table
-    blastdbcmd -db {params.dbname} -outfmt "%a %T" -entry "all" > acc_taxid
+    blastdbcmd -db {params.dbname} -outfmt "%a %T" -entry "all" | tr " " "\t" > acc_taxid
 
     # create the fasta/taxonomy labels file
-    cut -f 2 -d" "  acc_taxid  | taxonkit lineage  | awk '$2!=""'  | taxonkit reformat -P | cut -f 3 | paste acc_taxid - > {params.dbpath}_id_and_taxonomy.txt
+    cut -f 2 -d"\t"  acc_taxid  | taxonkit lineage  | awk '$2!=""'  | taxonkit reformat -P | cut -f 3 | paste acc_taxid - > {params.dbpath}_id_and_taxonomy.txt
     rm acc_taxid
     find .
     """

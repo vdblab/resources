@@ -3,6 +3,8 @@ reference,stephenturner-adapters,93b5f91,synthetic,https://raw.githubusercontent
 reference,hg38,hg38,human,ftp://hgdownload.cse.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.masked.gz
 reference,GRCm39,GCA_000001635.9,mouse,https://ftp.ncbi.nlm.nih.gov/genomes/genbank/vertebrate_mammalian/Mus_musculus/latest_assembly_versions/GCA_000001635.9_GRCm39/GCA_000001635.9_GRCm39_genomic.fna.gz
 reference,CHM13,v2.0,human,https://s3-us-west-2.amazonaws.com/human-pangenomics/T2T/CHM13/assemblies/analysis_set/chm13v2.0.fa.gz
+reference,optitype-hla-dna,07c49bf6fc,human,https://raw.githubusercontent.com/FRED-2/OptiType/07c49bf6fc93e8846e8826df63100a0b069cbe40/data/hla_reference_dna.fasta
+reference,optitype-hla-rna,07c49bf6fc,human,https://raw.githubusercontent.com/FRED-2/OptiType/07c49bf6fc93e8846e8826df63100a0b069cbe40/data/hla_reference_rna.fasta
 db,uniref90_diamond,v201901b,-,http://huttenhower.sph.harvard.edu/humann_data/uniprot/uniref_annotated/uniref90_annotated_v201901b_full.tar.gz
 db,utility_mapping,utility_mapping,-,http://huttenhower.sph.harvard.edu/humann_data/full_mapping_v201901b.tar.gz
 db,chocophlan,v201901_v31,-,http://huttenhower.sph.harvard.edu/humann_data/chocophlan/full_chocophlan.v201901_v31.tar.gz
