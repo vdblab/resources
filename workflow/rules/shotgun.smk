@@ -17,8 +17,8 @@ all_metaerg = dbs / "metaerg" / "2022" / "db" / "blast" / "silva_LSURef.fasta"
 
 all_card =    dbs / "CARD" / "v3.2.5/" / "card.json"
 
-# minomer: includes prebuilt kraken :/
-all_humann_dbs =  expand(f"{dbs}/{{name}}/{{version}}/{{base}}.db_ready", zip,
+# formerly called all_humann_dbs
+all_tarred_dbs =  expand(f"{dbs}/{{name}}/{{version}}/{{base}}.db_ready", zip,
                          org=DB_MANIFEST["org"], name=DB_MANIFEST["name"], base=DB_MANIFEST["base"],
                          version=DB_MANIFEST["version"]
                          )
@@ -138,8 +138,9 @@ rule metaerg_unpack:
     rm db.tar.gz
     """
 
-rule prepare_humann_db:
+rule prepare_tarred_db:
     """
+    This was originally for just the humann dbs but is used for iphop and kraken prebuilts as well
     THe server hosting these files is, again, rather unreliable and slow.
     We use wget instead of their humann_database --download tool which just downloads and extracts the gzipped tars
     See: https://github.com/biobakery/humann/blob/b1b674c122b5a538200bc3ba6a8efdade15ff496/humann/utilities.py#L510

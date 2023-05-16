@@ -15,6 +15,7 @@ all_bracken_dbs= expand(
     readlens=bracken_readlens
     )
 
+
 rule get_ftp_dir:
     container: default_container
     output:
@@ -29,22 +30,22 @@ rule get_ftp_dir:
     """
 
 
-rule get_phanta_db:
-    """TODO: download both the normal and the prokaryote masked dbs from
-    somewhere other than dropbox.  As of 2022-10-17, only the normal db is available
-    (on dropbox), and the masked db has not been released.
-    """
-    container: default_container
-    output:
-        f"{dbs}/phanta/v1/phanta.db_ready",
-    shell:"""
-    wget https://github.com/bhattlab/phanta#advanced-usage
-    cd $(dirname {output})
-    wget --continue --read-timeout=1 -r wget https://www.dropbox.com/sh/3ktsdqlcph6x95r/AACGSj0sxYV6IeUQuGAFPtk8a/database_V1.tar.gz
+# rule get_phanta_db:
+#     """TODO: download both the normal and the prokaryote masked dbs from
+#     somewhere other than dropbox.  As of 2022-10-17, only the normal db is available
+#     (on dropbox), and the masked db has not been released.
+#     """
+#     container: default_container
+#     output:
+#         f"{dbs}/phanta/v1/phanta.db_ready",
+#     shell:"""
+#     wget https://github.com/bhattlab/phanta#advanced-usage
+#     cd $(dirname {output})
+#     wget --continue --read-timeout=1 -r wget https://www.dropbox.com/sh/3ktsdqlcph6x95r/AACGSj0sxYV6IeUQuGAFPtk8a/database_V1.tar.gz
 
-    tar xvzf database_V1.tar.gz
-    touch $(basename {output})
-    """
+#     tar xvzf database_V1.tar.gz
+#     touch $(basename {output})
+#     """
 
 # rule get_nt:
 #     container: "docker://ghcr.io/vdblab/kraken2-patch:2.1.2",
