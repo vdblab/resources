@@ -80,7 +80,7 @@ rule ncbi_16S_format:
                  ".ntf", ".nto",  "_id_and_taxonomy.txt")
     resources:
         mem_mb=8 * 1024,
-        runtime="4:00",
+        runtime=4*60,
     params:
         taxdir=tax / "NCBI" / "taxonkit",
         dbpath = lambda wildcards, input: input.raw.replace(".tar.gz", ""),

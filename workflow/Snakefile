@@ -86,7 +86,7 @@ rule get_dbs:
     params:
         url=lambda wildcards: DB_MANIFEST.loc[DB_MANIFEST.version == wildcards.version].loc[wildcards.name, "url"]
     resources:
-        runtime="12:00",
+        runtime=12*60,
     shell:"""
     set -eux
     wget --continue --read-timeout=1 {params.url} -O {output}
@@ -108,7 +108,7 @@ rule get_taxonomy:
     params:
         url=lambda wildcards: TAX_MANIFEST.loc[wildcards.name, "url"]
     resources:
-        runtime="12:00",
+        runtime=12*60,
     shell:"""
     wget --continue --read-timeout=1 {params.url} -O {output}
     """

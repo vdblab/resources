@@ -41,7 +41,7 @@ rule metaphlan4_download:
         fasta = temp(dbs / "metaphlan" / "mpa_vJan21_CHOCOPhlAnSGB_202103" / "mpa_vJan21_CHOCOPhlAnSGB_202103.tar"),
     threads: 1
     resources:
-        runtime="12:00",
+        runtime=12*60
     params:
         dbdir = os.path.dirname(all_metaphlan[0]),#lambda wildcards, output: os.path.dirname(oup
     container: "docker://ghcr.io/vdblab/biobakery-profiler:20221001",
@@ -65,7 +65,7 @@ rule metaphlan4_process:
     threads: 32
     resources:
         mem_mb=32*1024,
-        runtime="12:00",
+        runtime=12*60,
     params:
         dbdir = os.path.dirname(all_metaphlan[0]),#lambda wildcards, output: os.path.dirname(oup
     container: "docker://ghcr.io/vdblab/biobakery-profiler:20221001",
@@ -91,7 +91,7 @@ rule antismash:
         clustercompare = directory(dbs / "antismash" / "6.0" / "clustercompare"),
     resources:
         mem_mb=2*1024,
-        runtime= "12:00",
+        runtime= 12*60,
     container:
         "docker://antismash/standalone:6.0.0"
     params:
@@ -106,7 +106,7 @@ rule metaerg_download:
         dbs / "metaerg" / "2022" / "db.tar.gz"
     resources:
         mem_mb=2*1024,
-        runtime= "12:00",
+        runtime= 12*60,
     container: default_container
     params:
         prefix=dbs / "metaerg" / "2022"
@@ -128,7 +128,7 @@ rule metaerg_unpack:
         sqlite3 = directory(dbs / "metaerg" / "2022" /  "db" /"sqlite3"),
     resources:
         mem_mb=2*1024,
-        runtime= "6:00",
+        runtime= 6*60,
     params:
         prefix=dbs / "metaerg" / "2022"
     container: default_container
@@ -156,7 +156,7 @@ rule prepare_tarred_db:
         f"{dbs}/{{name}}/{{version}}/{{base}}.db_ready",
     resources:
         mem_mb=2*1024,
-        runtime= "12:00",
+        runtime= 12* 60,
     container: default_container
     shell:"""
     tar xzf {input[0]} --directory {params.dirname}
@@ -207,7 +207,7 @@ rule download_and_format_CARD:
         raw = dbs / "CARD" / "v3.2.5/" / "card.json" ,
     resources:
         mem_mb=2*1024,
-        runtime= "6:00",
+        runtime=6*60,
     container:
         "docker://ghcr.io/vdblab/rgi:6.0.0"
     params:
@@ -258,7 +258,7 @@ rule format_quast_silva_blast_db:
         multiext(f"{dbs}/SILVA/138.1_SSURef_NR99/SILVA_138.1_SSURef_NR99_tax_silva", ".nsq", ".nin",  ".nhr")
     resources:
         mem_mb=8 * 1024,
-        runtime="4:00",
+        runtime=4*60,
     params:
         taxdir=tax / "NCBI" / "taxonkit",
         dbpath = lambda wildcards, input: input.raw.replace(".fasta.gz", ""),
@@ -289,7 +289,7 @@ rule get_refseq_genomes:
     params:
         outdir=os.path.dirname(all_refseq),
     resources:
-        runtime="8:00",
+        runtime=8*60,
     shell:"""
     cd {params.outdir}
     wget https://ftp.ncbi.nlm.nih.gov/genomes/refseq/bacteria/assembly_summary.txt
@@ -313,7 +313,7 @@ rule cazi_db:
     container: "docker://haidyi/run_dbcan:3.0.1"
     resources:
         mem_mb=32*1024,
-        runtime="12:00",
+        runtime=12*60,
     output:
         trig = dbs / "dbCAN2" / "v11/" / "stp.hmm.h3f",
     params:
