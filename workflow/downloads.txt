@@ -14,3 +14,4 @@ db,checkm,2015_01_16,-,https://data.ace.uq.edu.au/public/CheckM_databases/checkm
 db,iphop,Sept21,-,https://portal.nersc.gov/cfs/m342/iphop/db/iPHoP_db_Sept21_rw.tar.gz
 db,kraken,phanta_v1,-,http://ab_phanta.os.scg.stanford.edu/Phanta_DBs/database_V1.tar.gz
 db,kraken,phanta_v1_masked,-,http://ab_phanta.os.scg.stanford.edu/Phanta_DBs/masked_db_v1.tar.gz
+db,kraken,k2_pluspf_08gb_20230314,-,https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_08gb_20230314.tar.gz
