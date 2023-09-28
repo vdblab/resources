@@ -15,3 +15,4 @@ db,iphop,Sept21,-,https://portal.nersc.gov/cfs/m342/iphop/db/iPHoP_db_Sept21_rw.
 db,kraken,phanta_v1,-,http://ab_phanta.os.scg.stanford.edu/Phanta_DBs/database_V1.tar.gz
 db,kraken,phanta_v1_masked,-,http://ab_phanta.os.scg.stanford.edu/Phanta_DBs/masked_db_v1.tar.gz
 db,kraken,k2_pluspf_08gb_20230314,-,https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_08gb_20230314.tar.gz
+db,kaiju,2023-05-10-nr_euk,-,https://kaiju-idx.s3.eu-central-1.amazonaws.com/2023/kaiju_db_nr_euk_2023-05-10.tgz

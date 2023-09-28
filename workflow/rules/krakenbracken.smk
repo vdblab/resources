@@ -136,6 +136,7 @@ rule make_zymo_mock_spike_profiling_db:
 
     wget -N https://s3.amazonaws.com/zymo-files/BioPool/D6331.refseq.zip
     kraken2-build --download-library UniVec_Core --db $DBNAME
+    kraken2-build --threads {threads} --download-library human --db $DBNAME
 
     unzip D6331.refseq.zip
     mkdir D6331.refseq/tmp/
