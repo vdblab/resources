@@ -9,8 +9,9 @@ dbs = Path("dbs")
 tax = Path("taxonomy")
 
 
+# changed from all_refseq to _refseq to prevent this from being run every single time the workflow is executed
 today = date.today()
-all_refseq = f"{refs}/refseq/refseq/refseq/{today}-refseq.done"
+_refseq = f"{refs}/refseq/refseq/refseq/{today}-refseq.done"
 
 all_metaphlan =  multiext(str(dbs / "metaphlan" / "mpa_vJan21_CHOCOPhlAnSGB_202103" / "mpa_vJan21_CHOCOPhlAnSGB_202103"), ".1.bt2l", ".2.bt2l", ".3.bt2l", ".4.bt2l", ".rev.1.bt2l", ".rev.2.bt2l")
 all_metaerg = dbs / "metaerg" / "2022" / "db" / "blast" / "silva_LSURef.fasta"
@@ -147,7 +148,6 @@ rule prepare_tarred_db:
 
     """
     input:
-        #expand(f"{dbs}/{{name}}/{{version}}/{{base}}", zip, name=DB_MANIFEST["name"], version=DB_MANIFEST["version"], base=DB_MANIFEST["base"])
         f"{dbs}/{{name}}/{{version}}/{{base}}"
     params:
         basename=lambda wildcards, input: os.path.basename(input[0]),
@@ -285,9 +285,9 @@ rule get_checkm:
 rule get_refseq_genomes:
     # taken directly from https://www.ncbi.nlm.nih.gov/genome/doc/ftpfaq/
     output:
-        all_refseq
+        _refseq
     params:
-        outdir=os.path.dirname(all_refseq),
+        outdir=os.path.dirname(_refseq),
     resources:
         runtime=8*60,
     shell:"""
@@ -329,4 +329,89 @@ rule cazi_db:
     wget http://bcb.unl.edu/dbCAN2/download/Databases/V11/tf-1.hmm && hmmpress tf-1.hmm
     wget http://bcb.unl.edu/dbCAN2/download/Databases/V11/tf-2.hmm && hmmpress tf-2.hmm
     wget https://bcb.unl.edu/dbCAN2/download/Databases/V11/stp.hmm && hmmpress stp.hmm
+    """
+
+
+rule hecatomb:
+    """
+    These files are pulled from the hecatomb database config file:
+    https://github.com/shandley/hecatomb/blob/main/hecatomb/snakemake/config/dbFiles.yaml
+    """
+    threads: 2
+    output: """dbs/hecatomb/v0/contaminants/nebnext_adapters.fa
+       dbs/hecatomb/v0/contaminants/primerB.fa
+       dbs/hecatomb/v0/contaminants/rc_primerB_ad6.fa
+       dbs/hecatomb/v0/contaminants/truseq.fa
+       dbs/hecatomb/v0/contaminants/vector_contaminants.fa
+       dbs/hecatomb/v0/aa/virus_primary_aa/sequenceDB
+       dbs/hecatomb/v0/aa/virus_primary_aa/sequenceDB.dbtype
+       dbs/hecatomb/v0/aa/virus_primary_aa/sequenceDB_delnodes.dmp
+       dbs/hecatomb/v0/aa/virus_primary_aa/sequenceDB_h
+       dbs/hecatomb/v0/aa/virus_primary_aa/sequenceDB_h.dbtype
+       dbs/hecatomb/v0/aa/virus_primary_aa/sequenceDB_h.index
+       dbs/hecatomb/v0/aa/virus_primary_aa/sequenceDB.index
+       dbs/hecatomb/v0/aa/virus_primary_aa/sequenceDB.lookup
+       dbs/hecatomb/v0/aa/virus_primary_aa/sequenceDB_mapping
+       dbs/hecatomb/v0/aa/virus_primary_aa/sequenceDB_merged.dmp
+       dbs/hecatomb/v0/aa/virus_primary_aa/sequenceDB_names.dmp
+       dbs/hecatomb/v0/aa/virus_primary_aa/sequenceDB_nodes.dmp
+       dbs/hecatomb/v0/aa/virus_primary_aa/sequenceDB.source
+       dbs/hecatomb/v0/aa/virus_secondary_aa/sequenceDB
+       dbs/hecatomb/v0/aa/virus_secondary_aa/sequenceDB.dbtype
+       dbs/hecatomb/v0/aa/virus_secondary_aa/sequenceDB_delnodes.dmp
+       dbs/hecatomb/v0/aa/virus_secondary_aa/sequenceDB_h
+       dbs/hecatomb/v0/aa/virus_secondary_aa/sequenceDB_h.dbtype
+       dbs/hecatomb/v0/aa/virus_secondary_aa/sequenceDB_h.index
+       dbs/hecatomb/v0/aa/virus_secondary_aa/sequenceDB.index
+       dbs/hecatomb/v0/aa/virus_secondary_aa/sequenceDB.lookup
+       dbs/hecatomb/v0/aa/virus_secondary_aa/sequenceDB_mapping
+       dbs/hecatomb/v0/aa/virus_secondary_aa/sequenceDB_merged.dmp
+       dbs/hecatomb/v0/aa/virus_secondary_aa/sequenceDB_names.dmp
+       dbs/hecatomb/v0/aa/virus_secondary_aa/sequenceDB_nodes.dmp
+       dbs/hecatomb/v0/aa/virus_secondary_aa/sequenceDB.source
+       dbs/hecatomb/v0/host/bat/masked_ref.fa.gz
+       dbs/hecatomb/v0/host/camel/masked_ref.fa.gz
+       dbs/hecatomb/v0/host/cat/masked_ref.fa.gz
+       dbs/hecatomb/v0/host/celegans/masked_ref.fa.gz
+       dbs/hecatomb/v0/host/cow/masked_ref.fa.gz
+       dbs/hecatomb/v0/host/dog/masked_ref.fa.gz
+       dbs/hecatomb/v0/host/human/masked_ref.fa.gz
+       dbs/hecatomb/v0/host/macaque/masked_ref.fa.gz
+       dbs/hecatomb/v0/host/mosquito/masked_ref.fa.gz
+       dbs/hecatomb/v0/host/mouse/masked_ref.fa.gz
+       dbs/hecatomb/v0/host/rat/masked_ref.fa.gz
+       dbs/hecatomb/v0/host/tick/masked_ref.fa.gz
+       dbs/hecatomb/v0/host/virus_shred.fasta.gz
+       dbs/hecatomb/v0/nt/virus_primary_nt/sequenceDB
+       dbs/hecatomb/v0/nt/virus_primary_nt/sequenceDB.dbtype
+       dbs/hecatomb/v0/nt/virus_primary_nt/sequenceDB_h
+       dbs/hecatomb/v0/nt/virus_primary_nt/sequenceDB_h.dbtype
+       dbs/hecatomb/v0/nt/virus_primary_nt/sequenceDB_h.index
+       dbs/hecatomb/v0/nt/virus_primary_nt/sequenceDB.index
+       dbs/hecatomb/v0/nt/virus_primary_nt/sequenceDB.lookup
+       dbs/hecatomb/v0/nt/virus_primary_nt/sequenceDB.source
+       dbs/hecatomb/v0/nt/virus_secondary_nt/sequenceDB
+       dbs/hecatomb/v0/nt/virus_secondary_nt/sequenceDB.dbtype
+       dbs/hecatomb/v0/nt/virus_secondary_nt/sequenceDB_h
+       dbs/hecatomb/v0/nt/virus_secondary_nt/sequenceDB_h.dbtype
+       dbs/hecatomb/v0/nt/virus_secondary_nt/sequenceDB_h.index
+       dbs/hecatomb/v0/nt/virus_secondary_nt/sequenceDB.index
+       dbs/hecatomb/v0/nt/virus_secondary_nt/sequenceDB.lookup
+       dbs/hecatomb/v0/nt/virus_secondary_nt/sequenceDB.source
+       dbs/hecatomb/v0/tables/2020_07_27_Viral_classification_table_ICTV2019.txt
+       dbs/hecatomb/v0/tables/phage_taxonomic_lineages_12102020.txt""".split()
+    resources:
+        mem_mb=2*1024,
+        runtime= 12*60,
+    params:
+        prefix=dbs / "hecatomb" / "v0",
+        url="https://hecatombdatabases.s3.us-west-2.amazonaws.com/databases/"
+    container: default_container
+    shell: """
+    for path in {output}
+    do
+        urlbase=$(echo $path | sed "s|dbs/hecatomb/v0/||g")
+        echo "fetching $path"
+        wget  --continue --read-timeout=1 {params.url}${{urlbase}} -O $path
+    done
     """
