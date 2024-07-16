@@ -190,6 +190,8 @@ rule make_bracken_dbs_for_zymo_mock:
         f"{dbs}/kraken/{{mock}}/hash.k2d"
     output:
         f"{dbs}/kraken/{{mock}}/database{{readlen}}mers.kmer_distrib",
+    resources:
+        mem_mb=1024*32
     threads: 8
     shell: """
     DB=$(dirname {output})

@@ -1,6 +1,6 @@
 import os
 import sys
-
+ 
 import pandas as pd
 
 from pathlib import Path
@@ -82,7 +82,7 @@ rule get_refs:
 rule get_dbs:
     container: default_container
     output:
-        f"{dbs}/{{name}}/{{version}}/{{base}}.tar.gz",
+        f"{dbs}/{{name}}/{{version}}/{{base}}.{{ext}}gz",
     params:
         url=lambda wildcards: DB_MANIFEST.loc[DB_MANIFEST.version == wildcards.version].loc[wildcards.name, "url"]
     resources:

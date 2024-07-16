@@ -17,3 +17,4 @@ db,kraken,phanta_v1,-,http://ab_phanta.os.scg.stanford.edu/Phanta_DBs/database_V
 db,kraken,phanta_v1_masked,-,http://ab_phanta.os.scg.stanford.edu/Phanta_DBs/masked_db_v1.tar.gz
 db,kraken,k2_pluspf_08gb_20230314,-,https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_08gb_20230314.tar.gz
 db,kaiju,2023-05-10-nr_euk,-,https://kaiju-idx.s3.eu-central-1.amazonaws.com/2023/kaiju_db_nr_euk_2023-05-10.tgz
+db,uniref90,20240715,-,https://ftp.uniprot.org/pub/databases/uniprot/uniref/uniref90/uniref90.fasta.gz

@@ -13,15 +13,34 @@ tax = Path("taxonomy")
 today = date.today()
 _refseq = f"{refs}/refseq/refseq/refseq/{today}-refseq.done"
 
-all_metaphlan =  multiext(str(dbs / "metaphlan" / "mpa_vJan21_CHOCOPhlAnSGB_202103" / "mpa_vJan21_CHOCOPhlAnSGB_202103"), ".1.bt2l", ".2.bt2l", ".3.bt2l", ".4.bt2l", ".rev.1.bt2l", ".rev.2.bt2l")
+all_metaphlan_21 = multiext(str(dbs / "metaphlan" / "mpa_vJan21_CHOCOPhlAnSGB_202103" / "mpa_vJan21_CHOCOPhlAnSGB_202103"),
+                            ".1.bt2l", ".2.bt2l", ".3.bt2l", ".4.bt2l", ".rev.1.bt2l", ".rev.2.bt2l")
+all_metaphlan_24 = multiext(str(dbs / "metaphlan" / "mpa_vJun23_CHOCOPhlAnSGB_202403" / "mpa_vJun23_CHOCOPhlAnSGB_202403"),
+                            ".1.bt2l", ".2.bt2l", ".3.bt2l", ".4.bt2l", ".rev.1.bt2l", ".rev.2.bt2l")
+
 all_metaerg = dbs / "metaerg" / "2022" / "db" / "blast" / "silva_LSURef.fasta"
 
 all_card =    dbs / "CARD" / "v3.2.5/" / "card.json"
 
+all_shortbred = dbs / "shortbred" / "colibactin" / "colibactin_markers_20240715.fa"
+
 # formerly called all_humann_dbs
+TAR_DB_MANIFEST =  DB_MANIFEST[DB_MANIFEST.url.str.contains("tar|tgz", regex=True)]
+NOTAR_DB_MANIFEST =  DB_MANIFEST[~DB_MANIFEST.url.str.contains("tar|tgz", regex=True)]
+
+# print(DB_MANIFEST.shape)
+# print(TAR_DB_MANIFEST.shape)
+# print(NOTAR_DB_MANIFEST.shape)
+
 all_tarred_dbs =  expand(f"{dbs}/{{name}}/{{version}}/{{base}}.db_ready", zip,
-                         org=DB_MANIFEST["org"], name=DB_MANIFEST["name"], base=DB_MANIFEST["base"],
-                         version=DB_MANIFEST["version"]
+                         org=TAR_DB_MANIFEST["org"], name=TAR_DB_MANIFEST["name"], base=TAR_DB_MANIFEST["base"],
+                         version=TAR_DB_MANIFEST["version"]
+                         )
+
+# these are to trigger those files that just need to be downloaded and not unpacked
+all_untarred_dbs =  expand(f"{dbs}/{{name}}/{{version}}/{{base}}", zip,
+                         org=NOTAR_DB_MANIFEST["org"], name=NOTAR_DB_MANIFEST["name"], base=NOTAR_DB_MANIFEST["base"],
+                         version=NOTAR_DB_MANIFEST["version"]
                          )
 
 all_silva_db =  multiext(f"{dbs}/SILVA/138.1_SSURef_NR99/SILVA_138.1_SSURef_NR99_tax_silva", ".nsq", ".nin",  ".nhr")
@@ -33,7 +52,7 @@ default_container = "docker://ghcr.io/vdblab/utility:0b"
 rule metaphlan4_download:
     """
     This downloads the chocophlan db.  Their install code downloads very slowly
-    and often fails so we get it with wget then rerun the install command to
+    and often fails so we get it with wget then rerun the install command
     metaphlan --install does more than just downloading the db, it also reformats fasta files, extracts files, runs bowtie to index, and more
     https://github.com/biobakery/MetaPhlAn/blob/3e818b755d2f084d4df31004e83c7cdd5c97a093/metaphlan/__init__.py#L87
 
@@ -44,11 +63,32 @@ rule metaphlan4_download:
     resources:
         runtime=12*60
     params:
-        dbdir = os.path.dirname(all_metaphlan[0]),#lambda wildcards, output: os.path.dirname(oup
+        dbdir = lambda wc, output: os.path.dirname(output[0]),
     container: "docker://ghcr.io/vdblab/biobakery-profiler:20221001",
     shell:"""
     cd {params.dbdir}
-    wget  --continue --read-timeout=1  http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/mpa_vJan21_CHOCOPhlAnSGB_202103.tar
+    wget  --continue --read-timeout=1 http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/mpa_vJan21_CHOCOPhlAnSGB_202103.tar
+    """
+
+rule metaphlan4_download_2024:
+    """
+    This downloads the chocophlan db.  Their install code downloads very slowly
+    and often fails so we get it with wget then rerun the install command
+    metaphlan --install does more than just downloading the db, it also reformats fasta files, extracts files, runs bowtie to index, and more
+    https://github.com/biobakery/MetaPhlAn/blob/3e818b755d2f084d4df31004e83c7cdd5c97a093/metaphlan/__init__.py#L87
+
+    """
+    output:
+        tar = temp(dbs / "metaphlan" / "mpa_vJun23_CHOCOPhlAnSGB_202403" / "mpa_vJun23_CHOCOPhlAnSGB_202403.tar"),
+    threads: 1
+    resources:
+        runtime=12*60
+    params:
+        dbdir = lambda wc, output: os.path.dirname(output[0]),
+    container: "docker://ghcr.io/vdblab/biobakery-profiler:20240513a",
+    shell:"""
+    cd {params.dbdir}
+    wget  --continue --read-timeout=1  http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/mpa_vJun23_CHOCOPhlAnSGB_202403.tar
     """
 
 rule metaphlan4_process:
@@ -62,18 +102,43 @@ rule metaphlan4_process:
     input:
         fasta = dbs / "metaphlan" / "mpa_vJan21_CHOCOPhlAnSGB_202103" / "mpa_vJan21_CHOCOPhlAnSGB_202103.tar",
     output:
-        all_metaphlan,
+        all_metaphlan_21,
     threads: 32
     resources:
         mem_mb=32*1024,
         runtime=12*60,
     params:
-        dbdir = os.path.dirname(all_metaphlan[0]),#lambda wildcards, output: os.path.dirname(oup
+        dbdir = os.path.dirname(all_metaphlan_21[0]),#lambda wildcards, output: os.path.dirname(oup
     container: "docker://ghcr.io/vdblab/biobakery-profiler:20221001",
     shell:"""
     cd {params.dbdir}
     metaphlan --install --index mpa_vJan21_CHOCOPhlAnSGB_202103 --bowtie2db $PWD
     rm mpa_vJan21_CHOCOPhlAnSGB_202103.tar
+    """
+
+rule metaphlan4_process_2024:
+    """
+    This downloads the chocophlan db.  Their install code downloads very slowly
+    and often fails so we get it with wget then rerun the install command to
+    metaphlan --install does more than just downloading the db, it also reformats fasta files, extracts files, runs bowtie to index, and more
+    https://github.com/biobakery/MetaPhlAn/blob/3e818b755d2f084d4df31004e83c7cdd5c97a093/metaphlan/__init__.py#L87
+
+    """
+    input:
+        rules.metaphlan4_download_2024.output.tar
+    output:
+        all_metaphlan_24,
+    threads: 32
+    resources:
+        mem_mb=32*1024,
+        runtime=12*60,
+    params:
+        dbdir = os.path.dirname(all_metaphlan_24[0]),#lambda wildcards, output: os.path.dirname(oup
+        indexname = os.path.basename(os.path.dirname(all_metaphlan_24[0]))
+    container: "docker://ghcr.io/vdblab/biobakery-profiler:20240513a",
+    shell:"""
+    cd {params.dbdir}
+    metaphlan --install --index {params.indexname} --bowtie2db $PWD
     """
 
 
@@ -415,3 +480,53 @@ rule hecatomb:
         wget  --continue --read-timeout=1 {params.url}${{urlbase}} -O $path
     done
     """
+
+rule uncompress_uniref90:
+    input:
+        uniref_ref=dbs / "uniref90" / "20240715" / "uniref90.fasta.gz",
+    output:
+        uniref_ref=temp(dbs / "uniref90" / "20240715" / "uniref90.fasta"),
+    resources:
+        mem_mb= 64 * 1024,
+        runtime= 8 * 60,
+    shell: """    gunzip -c $PWD/{input.uniref_ref}  > {output.uniref_ref} """
+
+rule build_shortbred_uniref90_blastdb:
+    input:
+        uniref_ref=dbs / "uniref90" / "20240715" / "uniref90.fasta",
+    output:
+        uniref_ref=dbs / "uniref90" / "20240715" / "uniref90.pal",
+    params:
+        outname = lambda wc, input: input.uniref_ref.replace(".fasta", "")
+    container: "docker://biobakery/shortbred:0.9.5"
+    resources:
+        mem_mb= 64 * 1024,
+        runtime= 8 * 60,
+    shell: """
+    makeblastdb -in {input.uniref_ref} -out {params.outname} -dbtype prot -logfile {params.outname}.log
+    """
+
+rule build_colibactin_shortbred_markers:
+    input:
+        target_fa=os.path.join(workflow.basedir, "../data/colibactin_genes.fasta"),
+        uniref_ref=dbs / "uniref90" / "20240715" / "uniref90.pal",
+#        usearch_path=config["usearch_path"]
+    output:
+        marker=dbs / "shortbred" / "colibactin" / "colibactin_markers_20240715.fa",
+        tmp_dir=temp(directory("results/tmp_marker"))
+    container: "docker://biobakery/shortbred:0.9.5"
+    params:
+        dbname = lambda wc, input: input.uniref_ref.replace(".pal", "")
+    threads: 16
+    resources:
+        mem_mb= 32 * 1024,
+        runtime= 2 * 60,
+    shell:
+        '''
+        shortbred_identify.py \
+            --goi {input.target_fa} \
+            --refdb {params.dbname} \
+            --markers {output.marker} \
+            --threads {threads} \
+            --tmp {output.tmp_dir}
+        '''
