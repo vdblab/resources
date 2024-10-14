@@ -3,8 +3,9 @@ This snakemake workflow is used to create the database/reference/resource infras
 
 
 ## Usage
+We recommend running in `-n` or `--dryrun` mode first to ensure you are only making needed changes; similarly, use `--rerun-triggers mtime` to prevent formatting changes or additional rules from automatically triggering rerunning of successful jobs.
 ```sh
-snakemake --profile /home/watersn/GitHub/vdblab-pipelines/msk-lsf --directory /path/to/new/resources/
+snakemake  --directory /data/brinkvd/resources/ --rerun-triggers mtime -n
 ```
 
 
