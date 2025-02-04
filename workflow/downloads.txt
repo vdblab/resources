@@ -11,6 +11,7 @@ db,chocophlan,v201901_v31,-,http://huttenhower.sph.harvard.edu/humann_data/choco
 db,kraken,k2_pluspf_20220908,-,https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_20220908.tar.gz
 taxonomy,GTDB,202,-,https://data.gtdb.ecogenomic.org/releases/latest/auxillary_files/gtdbtk_v2_data.tar.gz
 db,GTDB,214,-,https://data.gtdb.ecogenomic.org/releases/release214/214.0/auxillary_files/gtdbtk_r214_data.tar.gz
+#db,GTDB,220,-,https://data.gtdb.ecogenomic.org/releases/release220/220.0/auxillary_files/gtdbtk_r220_data.tar.gz
 db,checkm,2015_01_16,-,https://data.ace.uq.edu.au/public/CheckM_databases/checkm_data_2015_01_16.tar.gz
 db,iphop,Sept21,-,https://portal.nersc.gov/cfs/m342/iphop/db/iPHoP_db_Sept21_rw.tar.gz
 db,kraken,phanta_v1,-,http://ab_phanta.os.scg.stanford.edu/Phanta_DBs/database_V1.tar.gz

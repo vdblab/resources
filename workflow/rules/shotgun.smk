@@ -8,6 +8,8 @@ refs = Path("references")
 dbs = Path("dbs")
 tax = Path("taxonomy")
 
+localrules:
+    get_mkspike_genomes
 
 # changed from all_refseq to _refseq to prevent this from being run every single time the workflow is executed
 today = date.today()
@@ -45,6 +47,7 @@ all_untarred_dbs =  expand(f"{dbs}/{{name}}/{{version}}/{{base}}", zip,
 
 all_silva_db =  multiext(f"{dbs}/SILVA/138.1_SSURef_NR99/SILVA_138.1_SSURef_NR99_tax_silva", ".nsq", ".nin",  ".nhr")
 
+all_spikes =  refs /  "mkspikeseq" / "mkspikeseq" / "0.0.0" / "spikes.done"
 
 default_container = "docker://ghcr.io/vdblab/utility:0b"
 
@@ -530,3 +533,36 @@ rule build_colibactin_shortbred_markers:
             --threads {threads} \
             --tmp {output.tmp_dir}
         '''
+
+spikes = ["Salinibacter_ruber", "Trichoderma_reesei", "Haloarcula_hispanica"]
+
+rule get_mkspike_genomes:
+    output:
+        expand(f"{refs}/{{org}}/{{name}}/{{version}}/{{base}}.fa",
+               org="mkspikeseq", name="mkspikeseq",
+               base=spikes, version="0.0.0"),
+        expand(f"{refs}/{{org}}/{{name}}/{{version}}/{{base}}_full.bed",
+               org="mkspikeseq", name="mkspikeseq",
+               base=spikes, version="0.0.0"),
+        refs /  "mkspikeseq" / "mkspikeseq" / "0.0.0" / "spikes.done",
+        table=refs /  "mkspikeseq" / "mkspikeseq" / "0.0.0" / "mkspike.csv",
+    params:
+        outdir = lambda wc, output: os.path.dirname(output[0]),
+        abspath = os.path.abspath(os.getcwd()),
+    # get a container for this, as it requires curl,wget, samtools
+    shell:"""
+    set -euo
+    curl -o - ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/013/045/GCA_000013045.1_ASM1304v1/GCA_000013045.1_ASM1304v1_genomic.fna.gz | gunzip > {params.outdir}/Salinibacter_ruber.fa
+    curl -o - ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/167/675/GCF_000167675.1_v2.0/GCF_000167675.1_v2.0_genomic.fna.gz | gunzip  > {params.outdir}/Trichoderma_reesei.fa
+    curl -o - ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/223/905/GCF_000223905.1_ASM22390v1/GCF_000223905.1_ASM22390v1_genomic.fna.gz | gunzip  > {params.outdir}/Haloarcula_hispanica.fa
+    for fa in {params.outdir}/*fa;
+    do
+        echo $fa
+        samtools faidx $fa
+        sort ${{fa}}.fai  > ${{fa}}.fai.sorted
+        thisbase=$(echo $fa | sed "s|.fa$||g")
+        awk 'BEGIN {{FS="\t"}}; {{print $1 FS "0" FS $2}}' ${{fa}}.fai.sorted | sort -k 1,1 -k2,2n > ${{thisbase}}_full.bed
+        echo -e "$(basename $thisbase),{params.abspath}/${{fa}},{params.abspath}/${{thisbase}}_full.bed" >> {output.table}
+    done
+    touch {params.outdir}/spikes.done
+    """

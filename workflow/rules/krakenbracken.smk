@@ -13,7 +13,7 @@ bracken_readlens=[50,75,100,150,200,250,300]
 all_bracken_dbs = expand(
     f"{dbs}/kraken/{{mock}}/database{{readlens}}mers.kmer_distrib",
     readlens=bracken_readlens,
-    mock=["zymogutv0", "zymogutv0_plusspikes"]
+    mock=["zymogutv0", "zymogutv1_plusspikes"]
 
     )
 
@@ -65,7 +65,7 @@ rule make_zymo_mock_profiling_db:
         f"{dbs}/kraken/zymogutv0/hash.k2d"
     threads: 8
     resources:
-        mem_mb=8*1028,
+        mem_mb=8*1024,
         runtime=24*60,
     shell: """
     DBNAME=$(dirname {output[0]})
@@ -122,20 +122,23 @@ rule make_zymo_mock_spike_profiling_db:
     # https://github.com/DerrickWood/kraken2/pull/637
     container: "docker://ghcr.io/vdblab/kraken2-patch:2.1.2",
     output:
-        f"{dbs}/kraken/zymogutv0_plusspikes/hash.k2d"
+        f"{dbs}/kraken/zymogutv1_plusspikes/hash.k2d"
     threads: 8
     resources:
-        mem_mb=8*1028,
-        runtime=24*60,
+        mem_mb=lambda wc, attempt: 8*1024 * attempt,
+        runtime=lambda wc, attempt: 24*60* attempt,
     shell: """
     DBNAME=$(dirname {output[0]})
     # we do this rm step because the snakemake outputs dont track every file in the db, just the trigger file
     # so if a build breaks, we want a clean dir to start over
-    rm -rf $DBNAME/library/ D6331.refseq/
+#    rm -rf $DBNAME/library/ D6331.refseq/
     kraken2-build --download-taxonomy --db $DBNAME
 
     wget -N https://s3.amazonaws.com/zymo-files/BioPool/D6331.refseq.zip
     kraken2-build --download-library UniVec_Core --db $DBNAME
+    kraken2-build --download-library bacteria --db $DBNAME
+    kraken2-build --download-library archaea --db $DBNAME
+    kraken2-build --download-library fungi --db $DBNAME
     kraken2-build --threads {threads} --download-library human --db $DBNAME
 
     unzip D6331.refseq.zip
@@ -191,8 +194,9 @@ rule make_bracken_dbs_for_zymo_mock:
     output:
         f"{dbs}/kraken/{{mock}}/database{{readlen}}mers.kmer_distrib",
     resources:
-        mem_mb=1024*32
-    threads: 8
+        mem_mb=lambda wc, attempt: 150 *1024 * attempt,
+        runtime=lambda wc, attempt: 24*60* attempt,
+    threads: 32
     shell: """
     DB=$(dirname {output})
     # see
@@ -213,11 +217,11 @@ rule complete_bracken_db:
     input:
         expand(f"{dbs}/kraken/{{mock}}/database{{readlen}}mers.kmer_distrib",
                readlen=bracken_readlens,
-               mock=["zymogutv0", "zymogutv0_plusspikes"]
+               mock=["zymogutv0", "zymogutv1_plusspikes"]
                ),
 
     output:
-        f"{dbs}/kraken/zymogutv0/mock.db_ready",
+        f"{dbs}/kraken/zymogutv1/mock.db_ready",
     threads: 1
     shell: """
     rm database.kraken
