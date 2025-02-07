@@ -25,6 +25,7 @@ all_metaerg = dbs / "metaerg" / "2022" / "db" / "blast" / "silva_LSURef.fasta"
 all_card =    dbs / "CARD" / "v3.2.5/" / "card.json"
 
 all_shortbred = dbs / "shortbred" / "colibactin" / "colibactin_markers_20240715.fa"
+all_sylph =  dbs / "sylph" / "20250205-3kingdom/" / "3kingdom_metadata.tsv"
 
 # formerly called all_humann_dbs
 TAR_DB_MANIFEST =  DB_MANIFEST[DB_MANIFEST.url.str.contains("tar|tgz", regex=True)]
@@ -565,4 +566,29 @@ rule get_mkspike_genomes:
         echo -e "$(basename $thisbase),{params.abspath}/${{fa}},{params.abspath}/${{thisbase}}_full.bed" >> {output.table}
     done
     touch {params.outdir}/spikes.done
+    """
+
+
+
+rule download_sylph_dbs:
+   output:
+       dbs / "sylph" / "20250205-3kingdom/" / "fungi-refseq-2024-07-25-c200-v0.3.syldb",
+       dbs / "sylph" / "20250205-3kingdom/" / "gtdb-r220-c200-dbv1.syldb",
+       dbs / "sylph" / "20250205-3kingdom/" / "imgvr_c200_v0.3.0.syldb",
+       dbs / "sylph" / "20250205-3kingdom/" / "fungi_refseq_2024-07-25_metadata.tsv.gz",
+       dbs / "sylph" / "20250205-3kingdom/" / "gtdb_r220_metadata.tsv.gz",
+       dbs / "sylph" / "20250205-3kingdom/" / "IMGVR_4.1_metadata.tsv.gz",
+       dbs / "sylph" / "20250205-3kingdom/" / "3kingdom_metadata.tsv",
+   params:
+       outdir=lambda wc, output: os.path.dirname(output[0]),
+   shell:
+    """
+    cd {params.outdir}
+    wget http://faust.compbio.cs.cmu.edu/sylph-stuff/fungi-refseq-2024-07-25-c200-v0.3.syldb
+    wget http://faust.compbio.cs.cmu.edu/sylph-stuff/gtdb-r220-c200-dbv1.syldb
+    wget http://faust.compbio.cs.cmu.edu/sylph-stuff/imgvr_c200_v0.3.0.syldb
+    wget https://zenodo.org/records/14320496/files/fungi_refseq_2024-07-25_metadata.tsv.gz
+    wget https://zenodo.org/records/14320496/files/gtdb_r220_metadata.tsv.gz
+    wget https://zenodo.org/records/14320496/files/IMGVR_4.1_metadata.tsv.gz
+    zcat fungi_refseq_2024-07-25_metadata.tsv.gz gtdb_r220_metadata.tsv.gz IMGVR_4.1_metadata.tsv.gz > 3kingdom_metadata.tsv
     """
