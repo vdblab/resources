@@ -35,3 +35,13 @@ The indexes are stored in a similar hierarchy to the reference sequences, with t
 
 # manual steps
 Phanta must be downloaded/uploaded manually, as Dropbox is not accessible via the cluster.
+
+
+## AGORA2 sylph database
+The sylph AGORA2 database generation workflow is found in `workflows/sylphflux` directory, and can be executed as follows
+```
+snakemake --directory /data/brinkvd/resources/dbs/sylph/agora2/ --snakefile workflow/sylphflux/workflow/get_data.smk
+```
+
+
+It has a large number of targets and was developed independently, and thus not incorporated into this repo's primary workflow.
