@@ -15,11 +15,15 @@ localrules:
 today = date.today()
 _refseq = f"{refs}/refseq/refseq/refseq/{today}-refseq.done"
 
-all_metaphlan_21 = multiext(str(dbs / "metaphlan" / "mpa_vJan21_CHOCOPhlAnSGB_202103" / "mpa_vJan21_CHOCOPhlAnSGB_202103"),
-                            ".1.bt2l", ".2.bt2l", ".3.bt2l", ".4.bt2l", ".rev.1.bt2l", ".rev.2.bt2l")
-all_metaphlan_24 = multiext(str(dbs / "metaphlan" / "mpa_vJun23_CHOCOPhlAnSGB_202403" / "mpa_vJun23_CHOCOPhlAnSGB_202403"),
-                            ".1.bt2l", ".2.bt2l", ".3.bt2l", ".4.bt2l", ".rev.1.bt2l", ".rev.2.bt2l")
-
+mpa_versions  = [ "mpa_vJan21_CHOCOPhlAnSGB_202103", "mpa_vJun23_CHOCOPhlAnSGB_202403", "mpa_vJan25_CHOCOPhlAnSGB_202503", "mpa_vOct22_CHOCOPhlAnSGB_202403" ]
+# I don't know if these still need to be run in containers that correspond to the database requested; I though older versions hardcoded which files to fetch but I could be wrong
+mpa_imgs = ["docker://ghcr.io/vdblab/biobakery-profiler:4.0.5--3.6.1","docker://ghcr.io/vdblab/biobakery-profiler:4.1.0--v3.9" , "docker://ghcr.io/vdblab/biobakery-profiler:4.1.0--v3.9",
+            "docker://ghcr.io/vdblab/biobakery-profiler:4.0.6--4.0.0.alpha.1-final"]
+metaphlan_targets_dict = { ver :  {"files": multiext(str(dbs / "metaphlan" / ver / ver ),
+                                                     ".1.bt2l", ".2.bt2l", ".3.bt2l", ".4.bt2l", ".rev.1.bt2l", ".rev.2.bt2l"),
+                                   "img": img} for ver, img in zip(mpa_versions, mpa_imgs)}
+print(metaphlan_targets_dict)
+all_mpa = [x["files"] for k,x in metaphlan_targets_dict.items()]
 all_metaerg = dbs / "metaerg" / "2022" / "db" / "blast" / "silva_LSURef.fasta"
 
 all_card =    dbs / "CARD" / "v3.2.5/" / "card.json"
@@ -31,9 +35,6 @@ all_sylph =  dbs / "sylph" / "20250205-3kingdom/" / "3kingdom_metadata.tsv"
 TAR_DB_MANIFEST =  DB_MANIFEST[DB_MANIFEST.url.str.contains("tar|tgz", regex=True)]
 NOTAR_DB_MANIFEST =  DB_MANIFEST[~DB_MANIFEST.url.str.contains("tar|tgz", regex=True)]
 
-# print(DB_MANIFEST.shape)
-# print(TAR_DB_MANIFEST.shape)
-# print(NOTAR_DB_MANIFEST.shape)
 
 all_tarred_dbs =  expand(f"{dbs}/{{name}}/{{version}}/{{base}}.db_ready", zip,
                          org=TAR_DB_MANIFEST["org"], name=TAR_DB_MANIFEST["name"], base=TAR_DB_MANIFEST["base"],
@@ -53,47 +54,23 @@ all_spikes =  refs /  "mkspikeseq" / "mkspikeseq" / "0.0.0" / "spikes.done"
 default_container = "docker://ghcr.io/vdblab/utility:0b"
 
 
-rule metaphlan4_download:
-    """
-    This downloads the chocophlan db.  Their install code downloads very slowly
-    and often fails so we get it with wget then rerun the install command
-    metaphlan --install does more than just downloading the db, it also reformats fasta files, extracts files, runs bowtie to index, and more
-    https://github.com/biobakery/MetaPhlAn/blob/3e818b755d2f084d4df31004e83c7cdd5c97a093/metaphlan/__init__.py#L87
+# rule metaphlan4_download:
+#     """
+#     This downloads the chocophlan db raw marker files.
 
-    """
-    output:
-        fasta = temp(dbs / "metaphlan" / "mpa_vJan21_CHOCOPhlAnSGB_202103" / "mpa_vJan21_CHOCOPhlAnSGB_202103.tar"),
-    threads: 1
-    resources:
-        runtime=12*60
-    params:
-        dbdir = lambda wc, output: os.path.dirname(output[0]),
-    container: "docker://ghcr.io/vdblab/biobakery-profiler:20221001",
-    shell:"""
-    cd {params.dbdir}
-    wget  --continue --read-timeout=1 http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/mpa_vJan21_CHOCOPhlAnSGB_202103.tar
-    """
-
-rule metaphlan4_download_2024:
-    """
-    This downloads the chocophlan db.  Their install code downloads very slowly
-    and often fails so we get it with wget then rerun the install command
-    metaphlan --install does more than just downloading the db, it also reformats fasta files, extracts files, runs bowtie to index, and more
-    https://github.com/biobakery/MetaPhlAn/blob/3e818b755d2f084d4df31004e83c7cdd5c97a093/metaphlan/__init__.py#L87
-
-    """
-    output:
-        tar = temp(dbs / "metaphlan" / "mpa_vJun23_CHOCOPhlAnSGB_202403" / "mpa_vJun23_CHOCOPhlAnSGB_202403.tar"),
-    threads: 1
-    resources:
-        runtime=12*60
-    params:
-        dbdir = lambda wc, output: os.path.dirname(output[0]),
-    container: "docker://ghcr.io/vdblab/biobakery-profiler:20240513a",
-    shell:"""
-    cd {params.dbdir}
-    wget  --continue --read-timeout=1  http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/mpa_vJun23_CHOCOPhlAnSGB_202403.tar
-    """
+#     """
+#     output:
+#         tar = temp(dbs / "metaphlan" / "{mpa_ver}" / "{mpa_ver}.tar"),
+#     threads: 1
+#     resources:
+#         runtime=12*60
+#     params:
+#         dbdir = lambda wc, output: os.path.dirname(output[0]),
+#     container: lambda wc: metaphlan_targets_dict[wc.mpa_ver]["img"],
+#     shell:"""
+#     cd {params.dbdir}
+#     wget  --continue --read-timeout=1  http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/{wildcards.mpa_ver}.tar
+#     """
 
 rule metaphlan4_process:
     """
@@ -103,48 +80,22 @@ rule metaphlan4_process:
     https://github.com/biobakery/MetaPhlAn/blob/3e818b755d2f084d4df31004e83c7cdd5c97a093/metaphlan/__init__.py#L87
 
     """
-    input:
-        fasta = dbs / "metaphlan" / "mpa_vJan21_CHOCOPhlAnSGB_202103" / "mpa_vJan21_CHOCOPhlAnSGB_202103.tar",
+    # input:
+    #     tar = dbs / "metaphlan" / "{mpa_ver}" / "{mpa_ver}.tar",
     output:
-        all_metaphlan_21,
+        multiext(str(dbs / "metaphlan" / "{mpa_ver}" / "{mpa_ver}" ),
+                                                     ".1.bt2l", ".2.bt2l", ".3.bt2l", ".4.bt2l", ".rev.1.bt2l", ".rev.2.bt2l")
     threads: 32
     resources:
         mem_mb=32*1024,
         runtime=12*60,
     params:
-        dbdir = os.path.dirname(all_metaphlan_21[0]),#lambda wildcards, output: os.path.dirname(oup
-    container: "docker://ghcr.io/vdblab/biobakery-profiler:20221001",
+        dbdir = lambda wc, output: os.path.dirname(output[0]),
+    container: lambda wc: metaphlan_targets_dict[wc.mpa_ver]["img"],
     shell:"""
     cd {params.dbdir}
-    metaphlan --install --index mpa_vJan21_CHOCOPhlAnSGB_202103 --bowtie2db $PWD
-    rm mpa_vJan21_CHOCOPhlAnSGB_202103.tar
+    metaphlan --install --index {wildcards.mpa_ver} --bowtie2db $PWD
     """
-
-rule metaphlan4_process_2024:
-    """
-    This downloads the chocophlan db.  Their install code downloads very slowly
-    and often fails so we get it with wget then rerun the install command to
-    metaphlan --install does more than just downloading the db, it also reformats fasta files, extracts files, runs bowtie to index, and more
-    https://github.com/biobakery/MetaPhlAn/blob/3e818b755d2f084d4df31004e83c7cdd5c97a093/metaphlan/__init__.py#L87
-
-    """
-    input:
-        rules.metaphlan4_download_2024.output.tar
-    output:
-        all_metaphlan_24,
-    threads: 32
-    resources:
-        mem_mb=32*1024,
-        runtime=12*60,
-    params:
-        dbdir = os.path.dirname(all_metaphlan_24[0]),#lambda wildcards, output: os.path.dirname(oup
-        indexname = os.path.basename(os.path.dirname(all_metaphlan_24[0]))
-    container: "docker://ghcr.io/vdblab/biobakery-profiler:20240513a",
-    shell:"""
-    cd {params.dbdir}
-    metaphlan --install --index {params.indexname} --bowtie2db $PWD
-    """
-
 
 
 rule antismash:

@@ -2,9 +2,9 @@ import os
 import pandas as pd
 
 df = pd.read_excel(config["input_manifest"]).set_index("MicrobeID", drop=False)
-print(df.shape)
+#print(df.shape)
 df = df[~df["Genome link"].str.contains("fastq")].fillna("") # necessary for bugs like Prevotellaceae_bacterium_Marseille_P2826
-print(df.shape)
+#print(df.shape)
 
 localrules: all, sylphdb_tax_fmt
 
@@ -26,19 +26,27 @@ rule download:
     params:
         ftppath = lambda wc: get_ftp_path(wc)[0],
         statuspath = lambda wc: get_ftp_path(wc)[1],
+    resources:
+        runtime = 1 * 60
+
     shell: """
-    if wget --spider {params.statuspath}  2>/dev/null ; then
-        status=$(curl {params.statuspath} | head -n 1)
+    #tried this, but some hits were returning 350?
+    #response_code=$(curl -o /dev/null --silent -Iw '%{{http_code}}' {params.statuspath}) || true
+    #see https://matthewsetter.com/check-if-file-is-available-with-curl/
+    status=$(curl {params.statuspath} | head -n 1) || true
+    # -n check for empty status, eg file could not be reached
+    if [  -n "$status" ]; then
     	if [ "$status" == "status=suppressed" ]
     	then
-	     echo "supressed record"
 	     touch {output.outf}
+             echo "supressed record {params.statuspath}" >  {output.outf}.supressed
     	else
              wget --continue --read-timeout=1  {params.ftppath} -O {output}
         fi
     else
-        touch {output.outf}
 	echo "bad url"
+        touch {output.outf}
+        echo "bad url {params.statuspath}" > {output.outf}.bad_url
     fi
 
 

@@ -7,6 +7,7 @@ reference,optitype-hla-dna,07c49bf6fc,human,https://raw.githubusercontent.com/FR
 reference,optitype-hla-rna,07c49bf6fc,human,https://raw.githubusercontent.com/FRED-2/OptiType/07c49bf6fc93e8846e8826df63100a0b069cbe40/data/hla_reference_rna.fasta
 db,uniref90_diamond,v201901b,-,http://huttenhower.sph.harvard.edu/humann_data/uniprot/uniref_annotated/uniref90_annotated_v201901b_full.tar.gz
 db,utility_mapping,utility_mapping,-,http://huttenhower.sph.harvard.edu/humann_data/full_mapping_v201901b.tar.gz
+db,utility_mapping,utility_mapping_v4,-,http://huttenhower.sph.harvard.edu/humann_data/full_mapping_v4_alpha.tar.gz
 db,chocophlan,v201901_v31,-,http://huttenhower.sph.harvard.edu/humann_data/chocophlan/full_chocophlan.v201901_v31.tar.gz
 db,kraken,k2_pluspf_20220908,-,https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_20220908.tar.gz
 taxonomy,GTDB,202,-,https://data.gtdb.ecogenomic.org/releases/latest/auxillary_files/gtdbtk_v2_data.tar.gz
@@ -19,3 +20,5 @@ db,kraken,phanta_v1_masked,-,http://ab_phanta.os.scg.stanford.edu/Phanta_DBs/mas
 db,kraken,k2_pluspf_08gb_20230314,-,https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_08gb_20230314.tar.gz
 db,kaiju,2023-05-10-nr_euk,-,https://kaiju-idx.s3.eu-central-1.amazonaws.com/2023/kaiju_db_nr_euk_2023-05-10.tgz
 db,uniref90,20240715,-,https://ftp.uniprot.org/pub/databases/uniprot/uniref/uniref90/uniref90.fasta.gz
+db,fmhfunprofiler,KOs_sketched_scaled_1000,-,https://zenodo.org/records/10045253/files/KOs_sketched_scaled_1000.sig.zip?download=1
+db,chocophlan,v4_alpha,-,http://huttenhower.sph.harvard.edu/humann_data/chocophlan/chocophlan.v4_alpha.tar.gz
