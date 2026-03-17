@@ -22,7 +22,6 @@ mpa_imgs = ["docker://ghcr.io/vdblab/biobakery-profiler:4.0.5--3.6.1","docker://
 metaphlan_targets_dict = { ver :  {"files": multiext(str(dbs / "metaphlan" / ver / ver ),
                                                      ".1.bt2l", ".2.bt2l", ".3.bt2l", ".4.bt2l", ".rev.1.bt2l", ".rev.2.bt2l"),
                                    "img": img} for ver, img in zip(mpa_versions, mpa_imgs)}
-print(metaphlan_targets_dict)
 all_mpa = [x["files"] for k,x in metaphlan_targets_dict.items()]
 all_metaerg = dbs / "metaerg" / "2022" / "db" / "blast" / "silva_LSURef.fasta"
 
@@ -543,3 +542,21 @@ rule download_sylph_dbs:
     wget https://zenodo.org/records/14320496/files/IMGVR_4.1_metadata.tsv.gz
     zcat fungi_refseq_2024-07-25_metadata.tsv.gz gtdb_r220_metadata.tsv.gz IMGVR_4.1_metadata.tsv.gz > 3kingdom_metadata.tsv
     """
+
+rule get_eggnogmapper_data:
+    output:
+        expand( dbs / "eggnogmapper" / "5.0.2" / "eggnog.{ext}", ext=["db", "taxa.db", "_proteins.dmnd"])
+    params:
+        outdir = lambda wc, output: os.path.dirname(output[0])
+    container: "docker://quay.io/biocontainers/eggnog-mapper:2.1.13--pyhdfd78af_2"
+    resources:
+        runtime=4 * 60
+    shell:"""
+    # Download links are broken :(   download_eggnog_data.py  --data_dir {params.outdir} -y
+    cd {params.outdir}
+
+    wget http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog.db.gz
+    wget http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog.taxa.tar.gz
+    wget http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog_proteins.dmnd.gz
+    gunzip ./*
+        """
