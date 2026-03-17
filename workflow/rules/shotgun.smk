@@ -30,6 +30,7 @@ all_card =    dbs / "CARD" / "v3.2.5/" / "card.json"
 all_shortbred = dbs / "shortbred" / "colibactin" / "colibactin_markers_20240715.fa"
 all_sylph =  dbs / "sylph" / "20250205-3kingdom/" / "3kingdom_metadata.tsv"
 
+all_eggnogmapper = dbs / "eggnogmapper" / "5.0.2" / "eggnog.db"
 # formerly called all_humann_dbs
 TAR_DB_MANIFEST =  DB_MANIFEST[DB_MANIFEST.url.str.contains("tar|tgz", regex=True)]
 NOTAR_DB_MANIFEST =  DB_MANIFEST[~DB_MANIFEST.url.str.contains("tar|tgz", regex=True)]
@@ -545,7 +546,7 @@ rule download_sylph_dbs:
 
 rule get_eggnogmapper_data:
     output:
-        expand( dbs / "eggnogmapper" / "5.0.2" / "eggnog.{ext}", ext=["db", "taxa.db", "_proteins.dmnd"])
+        expand( dbs / "eggnogmapper" / "5.0.2" / "eggnog{ext}", ext=[".db", ".taxa.db", "_proteins.dmnd"])
     params:
         outdir = lambda wc, output: os.path.dirname(output[0])
     container: "docker://quay.io/biocontainers/eggnog-mapper:2.1.13--pyhdfd78af_2"
@@ -556,7 +557,8 @@ rule get_eggnogmapper_data:
     cd {params.outdir}
 
     wget http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog.db.gz
-    wget http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog.taxa.tar.gz
     wget http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog_proteins.dmnd.gz
     gunzip ./*
+    wget http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog.taxa.tar.gz
+    tar xzf eggnog.taxa.tar.gz
         """
